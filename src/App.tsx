@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { Calendar, Users, DollarSign, Settings, Bell, ChevronDown, Search, PlusCircle, Clock, User, ArrowLeft, ArrowRight, MoreVertical } from 'lucide-react';
+import { Calendar, Users, DollarSign, Settings, Bell, Search, PlusCircle, Clock, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // Mock Data - Simula os dados que viriam do seu backend (Node.js)
 const mockData = {
@@ -323,7 +323,7 @@ const Sidebar = ({ activePage, setActivePage }: { activePage: string; setActiveP
 };
 
 // Componente: Header (Cabeçalho Principal)
-const Header = ({ pageTitle }: { pageTitle: string }) => (
+const Header = () => (
     <header className="flex justify-between items-center py-4">
         <div>
             {/* O título da página agora é gerenciado dentro de cada componente de página */}
@@ -365,7 +365,7 @@ export default function App() {
         <div className="flex bg-slate-50 font-sans">
             <Sidebar activePage={activePage} setActivePage={setActivePage} />
             <main className="flex-1 p-8 h-screen overflow-y-auto">
-                <Header pageTitle={activePage} />
+                <Header />
                 {renderPage()}
             </main>
         </div>
