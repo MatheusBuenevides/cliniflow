@@ -27,7 +27,7 @@ Este documento apresenta um plano completo de desenvolvimento para o CliniFlow, 
 
 ## 🏗️ MÓDULO 1: REFATORAÇÃO E ESTRUTURA BASE
 
-### 1.1 Reorganização da Estrutura do Projeto
+### 1.1 Reorganização da Estrutura do Projeto -- FEITO --
 
 **Prompt:**
 ```
@@ -55,7 +55,7 @@ Requisitos:
 Estruture tudo seguindo as convenções de nomenclatura da documentação e mantenha a funcionalidade atual.
 ```
 
-### 1.2 Sistema de Roteamento
+### 1.2 Sistema de Roteamento -- FEITO --
 
 **Prompt:**
 ```
