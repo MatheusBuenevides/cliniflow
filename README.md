@@ -1,6 +1,32 @@
-# React + TypeScript + Vite
+# CliniFlow
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de gestão clínica desenvolvido com React, TypeScript, Vite e Tailwind CSS v4.
+
+## Tecnologias Utilizadas
+
+- **React 19** - Framework para interface de usuário
+- **TypeScript** - Superset do JavaScript com tipagem estática
+- **Vite** - Ferramenta de build rápida
+- **Tailwind CSS v4** - Framework CSS utility-first
+- **Lucide React** - Ícones
+- **Recharts** - Gráficos e visualizações
+
+## Configuração do Tailwind CSS v4
+
+Este projeto utiliza o Tailwind CSS v4 com a configuração mais simples possível:
+
+- **Zero configuração**: Sem `tailwind.config.js` nem `postcss.config.js`
+- **Vite nativo**: O Vite processa o Tailwind diretamente
+- **CSS puro**: Apenas `@import "tailwindcss"` no arquivo CSS principal
+- **Customizações via CSS**: Use a sintaxe `@theme` diretamente no CSS quando necessário
+
+### Arquivos de Configuração
+```
+src/index.css
+└── @import "tailwindcss";
+```
+
+Isso é tudo! O Vite e o Tailwind v4 cuidam de todo o resto automaticamente.
 
 Currently, two official plugins are available:
 
