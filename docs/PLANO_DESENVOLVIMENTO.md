@@ -82,7 +82,7 @@ Requisitos:
 Use as interfaces TypeScript já definidas e mantenha consistência com o design system.
 ```
 
-### 1.3 Gerenciamento de Estado Global
+### 1.3 Gerenciamento de Estado Global -- FEITO -- 
 
 **Prompt:**
 ```

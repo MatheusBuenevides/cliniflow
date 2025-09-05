@@ -1,12 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
-import { mockData } from '../services/mockData';
+import { usePatientStore } from '../stores/usePatientStore';
 
 const Patients: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const filteredPatients = mockData.patients.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const { 
+    patients, 
+    isLoading, 
+    error, 
+    fetchPatients, 
+    setFilters, 
+    clearError 
+  } = usePatientStore();
+
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      setFilters({ search: searchTerm });
+      fetchPatients({ search: searchTerm });
+    } else {
+      fetchPatients();
+    }
+  }, [searchTerm]);
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+          {error}
+          <button 
+            onClick={clearError}
+            className="ml-2 text-red-800 underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -23,37 +57,52 @@ const Patients: React.FC = () => {
           />
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="p-4 font-semibold text-slate-600">Nome</th>
-              <th className="p-4 font-semibold text-slate-600">Última Consulta</th>
-              <th className="p-4 font-semibold text-slate-600">Contato</th>
-              <th className="p-4 font-semibold text-slate-600">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPatients.map(patient => (
-              <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="p-4 text-slate-800 font-medium">{patient.name}</td>
-                <td className="p-4 text-slate-600">
-                  {new Date(patient.lastVisit).toLocaleDateString('pt-BR')}
-                </td>
-                <td className="p-4 text-slate-600">
-                  <div>{patient.phone}</div>
-                  <div className="text-sm text-slate-400">{patient.email}</div>
-                </td>
-                <td className="p-4">
-                  <button className="text-purple-600 hover:text-purple-800 font-semibold">
-                    Ver Prontuário
-                  </button>
-                </td>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="p-4 font-semibold text-slate-600">Nome</th>
+                <th className="p-4 font-semibold text-slate-600">Data de Cadastro</th>
+                <th className="p-4 font-semibold text-slate-600">Contato</th>
+                <th className="p-4 font-semibold text-slate-600">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {patients.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-slate-500">
+                    Nenhum paciente encontrado
+                  </td>
+                </tr>
+              ) : (
+                patients.map(patient => (
+                  <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="p-4 text-slate-800 font-medium">{patient.name}</td>
+                    <td className="p-4 text-slate-600">
+                      {new Date(patient.createdAt).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="p-4 text-slate-600">
+                      <div>{patient.phone}</div>
+                      <div className="text-sm text-slate-400">{patient.email}</div>
+                    </td>
+                    <td className="p-4">
+                      <button className="text-purple-600 hover:text-purple-800 font-semibold">
+                        Ver Prontuário
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

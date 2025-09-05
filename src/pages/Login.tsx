@@ -133,7 +133,7 @@ const Login: React.FC = () => {
           <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-800">
               <strong>Credenciais de teste:</strong><br />
-              Email: admin@cliniflow.com<br />
+              Email: ana.silva@email.com<br />
               Senha: 123456
             </p>
           </div>
