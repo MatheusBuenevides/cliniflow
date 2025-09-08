@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { Transaction, FinancialReport, TransactionFilters } from '../types';
+import type { Transaction, FinancialReport, TransactionFilters } from '../types';
 
 // Serviço para gerenciar dados financeiros
 export class FinancialService {

@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePatientStore } from '../stores/usePatientStore';
 import { PatientList } from '../components/patients';
 import type { Patient } from '../types/patient';
 
 const Patients: React.FC = () => {
+  const navigate = useNavigate();
   const { 
     patients,
     stats,
@@ -41,8 +43,7 @@ const Patients: React.FC = () => {
   };
 
   const handleViewRecord = (patient: Patient) => {
-    // TODO: Implementar navegação para prontuário
-    console.log('Ver prontuário:', patient);
+    navigate(`/pacientes/${patient.id}`);
   };
 
   const handleSchedule = (patient: Patient) => {

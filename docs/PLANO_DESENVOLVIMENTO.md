@@ -362,7 +362,7 @@ Requisitos:
 Use interfaces Patient, PatientFilters e mantenha consistência com design system.
 ```
 
-### 4.2 Ficha Detalhada do Paciente
+### 4.2 Ficha Detalhada do Paciente -- FEITO --
 
 **Prompt:**
 ```
