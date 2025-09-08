@@ -143,6 +143,8 @@ export interface SessionRecord {
   homeworkAssigned?: string; // Criptografado
   tags: string[]; // Para categorização
   attachments?: SessionAttachment[];
+  isEncrypted: boolean; // Indicador de criptografia
+  lastModified: string; // Última modificação
   createdAt: string;
   updatedAt: string;
 }
@@ -155,6 +157,7 @@ export interface SessionAttachment {
   fileType: string;
   fileSize: number;
   description?: string;
+  isEncrypted: boolean;
   uploadedAt: string;
 }
 
@@ -163,6 +166,87 @@ export interface SessionTag {
   name: string;
   color?: string;
   psychologistId: number;
+  usageCount: number; // Quantas vezes foi usado
+  createdAt: string;
+}
+
+// Tipos para criação e atualização de sessões
+export type SessionRecordCreate = Omit<SessionRecord, 'id' | 'sessionNumber' | 'isEncrypted' | 'lastModified' | 'createdAt' | 'updatedAt'>;
+export type SessionRecordUpdate = Partial<Omit<SessionRecord, 'id' | 'sessionNumber' | 'createdAt' | 'updatedAt'>>;
+
+// Tipos para o editor de sessões
+export interface SessionEditorState {
+  isEditing: boolean;
+  isSaving: boolean;
+  hasUnsavedChanges: boolean;
+  lastSaved?: string;
+  autoSaveEnabled: boolean;
+  encryptionStatus: 'encrypted' | 'unencrypted' | 'encrypting';
+}
+
+export interface SessionTemplate {
+  id: number;
+  name: string;
+  description?: string;
+  content: {
+    mainComplaint?: string;
+    clinicalObservations: string;
+    therapeuticPlan?: string;
+    evolution?: string;
+    homeworkAssigned?: string;
+    tags: string[];
+  };
+  isDefault: boolean;
+  psychologistId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Tipos para busca e filtros de sessões
+export interface SessionFilters {
+  patientId?: number;
+  startDate?: string;
+  endDate?: string;
+  tags?: string[];
+  searchText?: string;
+  sortBy?: 'date' | 'sessionNumber' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Tipos para relatórios de evolução
+export interface EvolutionReport {
+  patientId: number;
+  patientName: string;
+  period: {
+    start: string;
+    end: string;
+  };
+  sessions: {
+    sessionNumber: number;
+    date: string;
+    mainComplaint?: string;
+    evolution?: string;
+    tags: string[];
+  }[];
+  summary: {
+    totalSessions: number;
+    averageSessionDuration: number;
+    mostCommonTags: { tag: string; count: number }[];
+    progressIndicators: string[];
+  };
+}
+
+// Tipos para auditoria de acessos
+export interface SessionAuditLog {
+  id: number;
+  sessionId: number;
+  action: 'view' | 'edit' | 'create' | 'delete' | 'export' | 'print';
+  userId: number;
+  userType: 'psychologist' | 'admin' | 'system';
+  timestamp: string;
+  ipAddress?: string;
+  userAgent?: string;
+  details?: string;
 }
 
 // ===== TELEPSICOLOGIA =====

@@ -316,7 +316,7 @@ Use interfaces PaymentLink e Appointment. Simule gateway de pagamento inicialmen
 
 ---
 
-## 👥 MÓDULO 4: GESTÃO DE PACIENTES E PRONTUÁRIO
+## 👥 MÓDULO 4: GESTÃO DE PACIENTES E PRONTUÁRIO -- FEITO --
 
 ### 4.1 Lista e Busca de Pacientes -- FEITO -- 
 
@@ -404,7 +404,7 @@ Requisitos:
 Implemente criptografia visual para dados sensíveis e use interfaces Patient, Address, EmergencyContact.
 ```
 
-### 4.3 Sistema de Prontuário Eletrônico
+### 4.3 Sistema de Prontuário Eletrônico -- FEITO --
 
 **Prompt:**
 ```

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,7 +8,6 @@ import {
   MapPin, 
   Edit, 
   Trash2, 
-  Plus,
   User,
   FileText,
   CreditCard,
@@ -16,10 +15,14 @@ import {
   Shield,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  BookOpen,
+  PlusCircle
 } from 'lucide-react';
-import type { Appointment } from '../types';
+import type { Appointment, SessionRecord } from '../types';
 import { usePatientStore } from '../stores/usePatientStore';
+import { useSessionStore } from '../stores/useSessionStore';
+import { SessionEditor, SessionHistory } from '../components/sessions';
 
 type TabType = 'personal' | 'history' | 'sessions' | 'financial';
 
@@ -28,12 +31,109 @@ const PatientDetail: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('personal');
   const [showSensitiveData, setShowSensitiveData] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
+  const [showSessionEditor, setShowSessionEditor] = useState(false);
   
-  // Usar o store para buscar dados do paciente
+  // Usar os stores
   const { getPatientById } = usePatientStore();
+  const { 
+    sessions, 
+    fetchSessions, 
+    createSession, 
+    fetchTags 
+  } = useSessionStore();
   
   // Buscar paciente pelo ID
   const patient = id ? getPatientById(parseInt(id)) : null;
+  
+  // Carregar dados quando o componente monta
+  useEffect(() => {
+    if (id) {
+      fetchSessions({ patientId: parseInt(id) });
+      fetchTags();
+    }
+  }, [id, fetchSessions, fetchTags]);
+  
+  // Funções para gerenciar sessões
+  const handleSessionSelect = (session: SessionRecord) => {
+    setSelectedSession(session);
+    setShowSessionEditor(true);
+  };
+
+  const handleSessionEdit = (session: SessionRecord) => {
+    setSelectedSession(session);
+    setShowSessionEditor(true);
+  };
+
+  const handleSessionDelete = (sessionId: number) => {
+    // A sessão já foi deletada pelo store
+    if (selectedSession?.id === sessionId) {
+      setSelectedSession(null);
+      setShowSessionEditor(false);
+    }
+  };
+
+  const handleCreateNewSession = () => {
+    // Criar uma nova sessão baseada no último agendamento
+    const lastAppointment = appointments[0]; // Mock - seria o último agendamento
+    if (lastAppointment && patient) {
+      const newSession: SessionRecord = {
+        id: 0, // Será definido pelo store
+        appointmentId: lastAppointment.id,
+        patientId: patient.id,
+        psychologistId: 1,
+        sessionNumber: sessions.length + 1,
+        date: lastAppointment.date,
+        duration: lastAppointment.duration,
+        mainComplaint: '',
+        clinicalObservations: '',
+        therapeuticPlan: '',
+        evolution: '',
+        homeworkAssigned: '',
+        tags: [],
+        attachments: [],
+        isEncrypted: true,
+        lastModified: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      setSelectedSession(newSession);
+      setShowSessionEditor(true);
+    }
+  };
+
+  const handleSessionSave = async (session: SessionRecord) => {
+    try {
+      if (session.id === 0) {
+        // Nova sessão
+        await createSession({
+          appointmentId: session.appointmentId,
+          patientId: session.patientId,
+          psychologistId: session.psychologistId,
+          date: session.date,
+          duration: session.duration,
+          mainComplaint: session.mainComplaint,
+          clinicalObservations: session.clinicalObservations,
+          therapeuticPlan: session.therapeuticPlan,
+          evolution: session.evolution,
+          homeworkAssigned: session.homeworkAssigned,
+          tags: session.tags,
+          attachments: session.attachments
+        });
+      }
+      
+      setShowSessionEditor(false);
+      setSelectedSession(null);
+    } catch (error) {
+      console.error('Erro ao salvar sessão:', error);
+    }
+  };
+
+  const handleSessionCancel = () => {
+    setShowSessionEditor(false);
+    setSelectedSession(null);
+  };
   
   // Mock de appointments para o paciente (simulando dados do backend)
   const [appointments] = useState<Appointment[]>([
@@ -91,9 +191,6 @@ const PatientDetail: React.FC = () => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  const formatTime = (timeString: string) => {
-    return timeString;
-  };
 
   const getInitials = (name: string) => {
     return name
@@ -113,8 +210,8 @@ const PatientDetail: React.FC = () => {
 
   const tabs = [
     { id: 'personal' as TabType, label: 'Dados Pessoais', icon: User },
-    { id: 'history' as TabType, label: 'Histórico', icon: FileText },
-    { id: 'sessions' as TabType, label: 'Sessões', icon: Calendar },
+    { id: 'history' as TabType, label: 'Histórico', icon: Calendar },
+    { id: 'sessions' as TabType, label: 'Prontuário', icon: BookOpen },
     { id: 'financial' as TabType, label: 'Financeiro', icon: CreditCard },
   ];
 
@@ -218,6 +315,11 @@ const PatientDetail: React.FC = () => {
                     >
                       <Icon className="h-4 w-4" />
                       <span>{tab.label}</span>
+                      {tab.id === 'sessions' && sessions.length > 0 && (
+                        <span className="bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full">
+                          {sessions.length}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -382,40 +484,39 @@ const PatientDetail: React.FC = () => {
               {activeTab === 'sessions' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-slate-800">Sessões e Consultas</h3>
-                    <button className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
-                      <Plus className="h-4 w-4" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-800">Prontuário Eletrônico</h3>
+                      <p className="text-sm text-slate-600 mt-1">
+                        Sistema seguro de registro de sessões com criptografia end-to-end
+                      </p>
+                    </div>
+                    <button 
+                      onClick={handleCreateNewSession}
+                      className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <PlusCircle className="h-4 w-4" />
                       <span>Nova Sessão</span>
                     </button>
                   </div>
-                  <div className="space-y-3">
-                    {appointments.length > 0 ? (
-                      appointments.map((appointment) => (
-                        <div key={appointment.id} className="p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-slate-800">{formatDate(appointment.date)}</p>
-                              <p className="text-sm text-slate-600">{formatTime(appointment.time)}</p>
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                              appointment.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {appointment.status === 'scheduled' ? 'Agendado' :
-                               appointment.status === 'confirmed' ? 'Confirmado' :
-                               appointment.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <Calendar className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                        <p className="text-slate-600">Nenhuma sessão registrada</p>
-                      </div>
-                    )}
-                  </div>
+
+                  {/* Editor de Sessão */}
+                  {showSessionEditor && selectedSession && (
+                    <SessionEditor
+                      session={selectedSession}
+                      onSave={handleSessionSave}
+                      onCancel={handleSessionCancel}
+                    />
+                  )}
+
+                  {/* Histórico de Sessões */}
+                  {!showSessionEditor && (
+                    <SessionHistory
+                      patientId={parseInt(id || '0')}
+                      onSessionSelect={handleSessionSelect}
+                      onSessionEdit={handleSessionEdit}
+                      onSessionDelete={handleSessionDelete}
+                    />
+                  )}
                 </div>
               )}
 
