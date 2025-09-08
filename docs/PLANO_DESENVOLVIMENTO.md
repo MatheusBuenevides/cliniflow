@@ -111,7 +111,7 @@ Use as interfaces definidas em src/types/ e mantenha dados mockados temporariame
 
 ---
 
-## 🔐 MÓDULO 2: SISTEMA DE AUTENTICAÇÃO
+## 🔐 MÓDULO 2: SISTEMA DE AUTENTICAÇÃO -- FEITO --
 
 ### 2.1 Interfaces de Login e Registro -- FEITO --
 
@@ -188,7 +188,7 @@ Integre com Zustand authStore e prepare para API real.
 
 ---
 
-## 🌐 MÓDULO 3: PÁGINA PÚBLICA DE AGENDAMENTO
+## 🌐 MÓDULO 3: PÁGINA PÚBLICA DE AGENDAMENTO -- FEITO --
 
 ### 3.1 Layout e Perfil Público -- FEITO --
 
