@@ -190,7 +190,7 @@ Integre com Zustand authStore e prepare para API real.
 
 ## 🌐 MÓDULO 3: PÁGINA PÚBLICA DE AGENDAMENTO
 
-### 3.1 Layout e Perfil Público
+### 3.1 Layout e Perfil Público -- FEITO --
 
 **Prompt:**
 ```
