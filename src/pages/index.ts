@@ -7,3 +7,4 @@ export { default as Settings } from './Settings';
 export { default as Login } from './Login';
 export { default as Register } from './Register';
 export { default as PublicProfile } from './PublicProfile';
+export { default as OnlineBooking } from './OnlineBooking';

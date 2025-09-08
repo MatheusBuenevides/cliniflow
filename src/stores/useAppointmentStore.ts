@@ -6,8 +6,14 @@ import type {
   AppointmentFilters,
   AppointmentStatus,
   SessionModality,
-  PaymentStatus 
+  PaymentStatus,
+  AvailableSlot
 } from '../types/index';
+import type {
+  TimeSlot,
+  AppointmentBookingForm,
+  AvailabilitySettings
+} from '../types/booking';
 
 interface AppointmentState {
   // Estado
@@ -17,7 +23,18 @@ interface AppointmentState {
   error: string | null;
   filters: AppointmentFilters;
 
-  // Actions
+  // Estado do sistema de agendamento online
+  availableSlots: AvailableSlot[];
+  timeSlots: TimeSlot[];
+  availabilitySettings: AvailabilitySettings | null;
+  bookingState: {
+    currentStep: 'calendar' | 'time' | 'form' | 'confirmation';
+    selectedDate?: string;
+    selectedSlot?: TimeSlot;
+    formData: Partial<AppointmentBookingForm>;
+  };
+
+  // Actions básicas
   fetchAppointments: (filters?: AppointmentFilters) => Promise<void>;
   getAppointmentById: (id: number) => Appointment | null;
   createAppointment: (appointmentData: AppointmentCreate) => Promise<Appointment>;
@@ -29,6 +46,21 @@ interface AppointmentState {
   setFilters: (filters: AppointmentFilters) => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+
+  // Actions do sistema de agendamento online
+  fetchAvailableSlots: (psychologistId: number, startDate: string, endDate: string) => Promise<void>;
+  fetchTimeSlots: (psychologistId: number, date: string) => Promise<void>;
+  fetchAvailabilitySettings: (psychologistId: number) => Promise<void>;
+  updateAvailabilitySettings: (psychologistId: number, settings: AvailabilitySettings) => Promise<void>;
+  createBookingAppointment: (bookingData: AppointmentBookingForm, psychologistId: number) => Promise<Appointment>;
+  checkSlotAvailability: (psychologistId: number, date: string, time: string) => Promise<boolean>;
+  
+  // Actions do estado de booking
+  setBookingStep: (step: 'calendar' | 'time' | 'form' | 'confirmation') => void;
+  setSelectedDate: (date: string) => void;
+  setSelectedSlot: (slot: TimeSlot) => void;
+  updateBookingFormData: (data: Partial<AppointmentBookingForm>) => void;
+  resetBookingState: () => void;
 }
 
 // Mock data temporário para desenvolvimento
@@ -180,6 +212,15 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   isLoading: false,
   error: null,
   filters: {},
+
+  // Estado do sistema de agendamento online
+  availableSlots: [],
+  timeSlots: [],
+  availabilitySettings: null,
+  bookingState: {
+    currentStep: 'calendar',
+    formData: {}
+  },
 
   // Actions
   fetchAppointments: async (filters?: AppointmentFilters) => {
@@ -425,5 +466,278 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
 
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
+  },
+
+  // ===== SISTEMA DE AGENDAMENTO ONLINE =====
+
+  fetchAvailableSlots: async (psychologistId: number, startDate: string, endDate: string) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Mock de slots disponíveis
+      const mockSlots: AvailableSlot[] = [
+        {
+          date: '2024-01-25',
+          time: '09:00',
+          duration: 50,
+          modality: 'inPerson',
+          price: 120
+        },
+        {
+          date: '2024-01-25',
+          time: '10:00',
+          duration: 50,
+          modality: 'online',
+          price: 100
+        },
+        {
+          date: '2024-01-25',
+          time: '14:00',
+          duration: 50,
+          modality: 'inPerson',
+          price: 120
+        }
+      ];
+      
+      set({
+        availableSlots: mockSlots,
+        isLoading: false,
+        error: null
+      });
+    } catch (error) {
+      set({
+        availableSlots: [],
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao carregar horários disponíveis'
+      });
+    }
+  },
+
+  fetchTimeSlots: async (psychologistId: number, date: string) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // Mock de slots de tempo
+      const mockTimeSlots: TimeSlot[] = [
+        {
+          id: `${date}-09:00`,
+          date,
+          time: '09:00',
+          duration: 50,
+          modality: 'inPerson',
+          price: 120,
+          isAvailable: true
+        },
+        {
+          id: `${date}-10:00`,
+          date,
+          time: '10:00',
+          duration: 50,
+          modality: 'online',
+          price: 100,
+          isAvailable: true
+        },
+        {
+          id: `${date}-14:00`,
+          date,
+          time: '14:00',
+          duration: 50,
+          modality: 'inPerson',
+          price: 120,
+          isAvailable: false,
+          isBlocked: true,
+          reason: 'Agendado'
+        }
+      ];
+      
+      set({
+        timeSlots: mockTimeSlots,
+        isLoading: false,
+        error: null
+      });
+    } catch (error) {
+      set({
+        timeSlots: [],
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao carregar horários'
+      });
+    }
+  },
+
+  fetchAvailabilitySettings: async (psychologistId: number) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Mock de configurações
+      const mockSettings: AvailabilitySettings = {
+        workingHours: {
+          monday: { start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+          tuesday: { start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+          wednesday: { start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+          thursday: { start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+          friday: { start: '08:00', end: '18:00', lunchStart: '12:00', lunchEnd: '13:00' },
+          saturday: { start: '08:00', end: '12:00' },
+          sunday: null
+        },
+        sessionDuration: 50,
+        bufferTime: 10,
+        advanceBookingDays: 30,
+        cancellationHours: 24,
+        allowOnlineBooking: true,
+        allowInPersonBooking: true,
+        blockedDates: [],
+        blockedTimes: []
+      };
+      
+      set({
+        availabilitySettings: mockSettings,
+        isLoading: false,
+        error: null
+      });
+    } catch (error) {
+      set({
+        availabilitySettings: null,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao carregar configurações'
+      });
+    }
+  },
+
+  updateAvailabilitySettings: async (psychologistId: number, settings: AvailabilitySettings) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      set({
+        availabilitySettings: settings,
+        isLoading: false,
+        error: null
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao atualizar configurações'
+      });
+    }
+  },
+
+  createBookingAppointment: async (bookingData: AppointmentBookingForm, psychologistId: number) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const newAppointment: Appointment = {
+        id: Date.now(),
+        patientId: Date.now(),
+        patient: {
+          id: Date.now(),
+          name: bookingData.patientName,
+          phone: bookingData.patientPhone,
+          email: bookingData.patientEmail
+        },
+        psychologistId,
+        date: bookingData.selectedSlot.date,
+        time: bookingData.selectedSlot.time,
+        duration: bookingData.selectedSlot.duration,
+        type: bookingData.isFirstTime ? 'initial' : 'followUp',
+        modality: bookingData.selectedSlot.modality,
+        status: 'scheduled',
+        price: bookingData.selectedSlot.price,
+        notes: bookingData.notes,
+        paymentStatus: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      set(state => ({
+        appointments: [...state.appointments, newAppointment],
+        isLoading: false,
+        error: null
+      }));
+      
+      return newAppointment;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao criar agendamento'
+      });
+      throw error;
+    }
+  },
+
+  checkSlotAvailability: async (psychologistId: number, date: string, time: string) => {
+    try {
+      // Simular verificação de disponibilidade
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Mock: verificar se o horário está disponível
+      const now = new Date();
+      const slotDateTime = new Date(`${date}T${time}`);
+      
+      if (slotDateTime < now) {
+        return false;
+      }
+      
+      // Simular alguns horários ocupados
+      const blockedSlots = [
+        { date: '2024-01-25', time: '14:00' },
+        { date: '2024-01-25', time: '16:00' }
+      ];
+      
+      return !blockedSlots.some(slot => slot.date === date && slot.time === time);
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // ===== ACTIONS DO ESTADO DE BOOKING =====
+
+  setBookingStep: (step) => {
+    set(state => ({
+      bookingState: { ...state.bookingState, currentStep: step }
+    }));
+  },
+
+  setSelectedDate: (date) => {
+    set(state => ({
+      bookingState: { ...state.bookingState, selectedDate: date }
+    }));
+  },
+
+  setSelectedSlot: (slot) => {
+    set(state => ({
+      bookingState: { ...state.bookingState, selectedSlot: slot }
+    }));
+  },
+
+  updateBookingFormData: (data) => {
+    set(state => ({
+      bookingState: {
+        ...state.bookingState,
+        formData: { ...state.bookingState.formData, ...data }
+      }
+    }));
+  },
+
+  resetBookingState: () => {
+    set({
+      bookingState: {
+        currentStep: 'calendar',
+        formData: {}
+      }
+    });
   },
 }));

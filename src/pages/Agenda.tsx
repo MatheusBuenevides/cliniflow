@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import { useAppointmentStore } from '../stores/useAppointmentStore';
+import { AppointmentForm } from '../components/agenda';
 
 const Agenda: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showBookingForm, setShowBookingForm] = useState(false);
   const { 
     appointments, 
     isLoading, 
@@ -48,20 +50,66 @@ const Agenda: React.FC = () => {
     );
   }
 
+  const handleBookingComplete = (appointment: any) => {
+    console.log('Agendamento criado:', appointment);
+    setShowBookingForm(false);
+    // Recarregar a agenda
+    const startDate = startOfMonth.toISOString().split('T')[0];
+    const endDate = endOfMonth.toISOString().split('T')[0];
+    fetchAppointments({ startDate, endDate });
+  };
+
+  if (showBookingForm) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="mb-6">
+            <button
+              onClick={() => setShowBookingForm(false)}
+              className="flex items-center space-x-2 text-slate-600 hover:text-slate-800 transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar para Agenda</span>
+            </button>
+            <h1 className="text-3xl font-bold text-slate-800">Novo Agendamento</h1>
+            <p className="text-slate-600 mt-2">
+              Preencha os dados abaixo para agendar uma nova consulta
+            </p>
+          </div>
+
+          <AppointmentForm
+            psychologistId={1} // Mock ID
+            onBookingComplete={handleBookingComplete}
+            onCancel={() => setShowBookingForm(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-slate-800">Agenda</h1>
-        <div className="flex items-center space-x-2">
-          <button onClick={prevMonth} className="p-2 rounded-md hover:bg-slate-200">
-            <ArrowLeft size={20} />
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => setShowBookingForm(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Novo Agendamento</span>
           </button>
-          <h2 className="text-xl font-semibold text-slate-700 w-40 text-center">
-            {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-          </h2>
-          <button onClick={nextMonth} className="p-2 rounded-md hover:bg-slate-200">
-            <ArrowRight size={20} />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button onClick={prevMonth} className="p-2 rounded-md hover:bg-slate-200">
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-xl font-semibold text-slate-700 w-40 text-center">
+              {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+            </h2>
+            <button onClick={nextMonth} className="p-2 rounded-md hover:bg-slate-200">
+              <ArrowRight size={20} />
+            </button>
+          </div>
         </div>
       </div>
       
