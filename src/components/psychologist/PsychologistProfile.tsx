@@ -45,9 +45,10 @@ import ContactInfo from './ContactInfo';
 
 interface PsychologistProfileProps {
   psychologist: Psychologist;
+  onStartBooking?: () => void;
 }
 
-const PsychologistProfile: React.FC<PsychologistProfileProps> = ({ psychologist }) => {
+const PsychologistProfile: React.FC<PsychologistProfileProps> = ({ psychologist, onStartBooking }) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -161,6 +162,53 @@ const PsychologistProfile: React.FC<PsychologistProfileProps> = ({ psychologist 
                 </p>
               </div>
             </section>
+
+            {/* Agendamento Online */}
+            {onStartBooking && (
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+                  <div className="w-1 h-6 bg-gradient-to-b from-purple-600 to-blue-600 rounded-full mr-3"></div>
+                  Agendamento Online
+                </h2>
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-100">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Agende sua consulta de forma rápida e segura
+                      </h3>
+                      <p className="text-gray-700 leading-relaxed mb-4">
+                        Escolha o melhor horário para você, preencha seus dados e confirme seu agendamento. 
+                        Disponível para consultas presenciais e online.
+                      </p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                          ✓ Agendamento 24/7
+                        </span>
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          ✓ Confirmação por email
+                        </span>
+                        <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                          ✓ Presencial e Online
+                        </span>
+                      </div>
+                      <button
+                        onClick={onStartBooking}
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+                      >
+                        Agendar Agora
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -213,6 +261,19 @@ const PsychologistProfile: React.FC<PsychologistProfileProps> = ({ psychologist 
                 </div>
               </div>
             </div>
+
+            {/* Botão de Agendamento Online */}
+            {onStartBooking && (
+              <button
+                onClick={onStartBooking}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-4 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg transform hover:scale-105"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Agendar Consulta Online</span>
+              </button>
+            )}
 
             {/* Botão WhatsApp */}
             <a

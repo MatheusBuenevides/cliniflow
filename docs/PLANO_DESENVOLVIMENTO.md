@@ -227,7 +227,7 @@ Requisitos:
 Use interface PublicProfile e mantenha dados mockados até integração com API.
 ```
 
-### 3.2 Sistema de Agendamento Online
+### 3.2 Sistema de Agendamento Online -- FEITO --
 
 **Prompt:**
 ```

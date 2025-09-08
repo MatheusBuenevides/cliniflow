@@ -43,13 +43,18 @@ interface SessionPrices {
 import { getPsychologistByCustomUrl } from '../services/mockData';
 import PublicLayout from '../components/layout/PublicLayout';
 import { PsychologistProfile } from '../components/psychologist';
+import BookingCTA from '../components/psychologist/BookingCTA';
 import { LoadingSpinner } from '../components/ui';
+import { AppointmentForm } from '../components/agenda';
+import type { Appointment } from '../types';
 
 const PublicProfile: React.FC = () => {
   const { customUrl } = useParams<{ customUrl: string }>();
   const [psychologist, setPsychologist] = useState<Psychologist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [completedAppointment, setCompletedAppointment] = useState<Appointment | null>(null);
 
   useEffect(() => {
     const fetchPsychologist = async () => {
@@ -79,6 +84,21 @@ const PublicProfile: React.FC = () => {
 
     fetchPsychologist();
   }, [customUrl]);
+
+  const handleBookingComplete = (appointment: Appointment) => {
+    setCompletedAppointment(appointment);
+    setShowBookingForm(false);
+  };
+
+  const handleStartBooking = () => {
+    setShowBookingForm(true);
+    setCompletedAppointment(null);
+  };
+
+  const handleCancelBooking = () => {
+    setShowBookingForm(false);
+    setCompletedAppointment(null);
+  };
 
   // Loading State
   if (loading) {
@@ -127,7 +147,117 @@ const PublicProfile: React.FC = () => {
   return (
     <PublicLayout>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PsychologistProfile psychologist={psychologist} />
+        {showBookingForm ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-800">Agendar Consulta</h1>
+                <p className="text-slate-600 mt-2">
+                  Agende sua consulta com {psychologist.name}
+                </p>
+              </div>
+              <button
+                onClick={handleCancelBooking}
+                className="text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <AppointmentForm
+              psychologistId={psychologist.id}
+              onBookingComplete={handleBookingComplete}
+              onCancel={handleCancelBooking}
+            />
+          </div>
+        ) : completedAppointment ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <h1 className="text-2xl font-bold text-slate-800 mb-4">
+              Agendamento Confirmado!
+            </h1>
+            
+            <p className="text-slate-600 mb-6">
+              Seu agendamento foi realizado com sucesso. Você receberá um email de confirmação em breve.
+            </p>
+
+            <div className="bg-slate-50 rounded-lg p-6 mb-6 text-left max-w-md mx-auto">
+              <h3 className="font-semibold text-slate-800 mb-4">Detalhes do agendamento:</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center space-x-2">
+                  <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-slate-600">
+                    {new Date(completedAppointment.date).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-slate-600">
+                    {completedAppointment.time}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="text-slate-600">
+                    {completedAppointment.patient.name}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-slate-600">
+                    Modalidade: {completedAppointment.modality === 'online' ? 'Online' : 'Presencial'}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-slate-600">
+                    Valor: {new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }).format(completedAppointment.price)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={handleStartBooking}
+                className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Novo Agendamento
+              </button>
+              
+              <button
+                onClick={() => window.print()}
+                className="px-6 py-3 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                Imprimir Comprovante
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            <PsychologistProfile 
+              psychologist={psychologist} 
+              onStartBooking={handleStartBooking}
+            />
+            
+            <BookingCTA 
+              onStartBooking={handleStartBooking}
+              psychologistName={psychologist.name}
+            />
+          </div>
+        )}
       </div>
     </PublicLayout>
   );
