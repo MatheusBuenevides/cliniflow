@@ -149,7 +149,7 @@ Requisitos:
 Use as interfaces Psychologist e AuthContext já definidas. Implemente validação conforme regras do CFP.
 ```
 
-### 2.2 Proteção de Rotas e Context
+### 2.2 Proteção de Rotas e Context -- FEITO -- 
 
 **Prompt:**
 ```

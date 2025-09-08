@@ -5,21 +5,44 @@ import { LoadingSpinner } from '../ui';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireAuth?: boolean;
+  redirectTo?: string;
+  fallback?: React.ReactNode;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requireAuth = true,
+  redirectTo = '/login',
+  fallback
+}) => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
+  // Se não requer autenticação, renderiza os children
+  if (!requireAuth) {
+    return <>{children}</>;
+  }
+
+  // Loading state
   if (loading) {
-    return <LoadingSpinner size="lg" text="Verificando autenticação..." fullScreen />;
+    return fallback || (
+      <LoadingSpinner size="lg" text="Verificando autenticação..." fullScreen />
+    );
   }
 
+  // Se não autenticado, redireciona
   if (!isAuthenticated) {
-    // Redireciona para login, mas salva a rota que o usuário tentou acessar
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return (
+      <Navigate 
+        to={redirectTo} 
+        state={{ from: location.pathname }} 
+        replace 
+      />
+    );
   }
 
+  // Usuário autenticado, renderiza os children
   return <>{children}</>;
 };
 

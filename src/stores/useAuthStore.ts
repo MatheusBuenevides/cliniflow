@@ -65,6 +65,19 @@ export const useAuthStore = create<AuthState>()(
           
           // Mock de validação - em produção, isso seria uma chamada para a API
           if (email === 'ana.silva@email.com' && password === '123456') {
+            // Simular criação de JWT token
+            const tokenPayload = {
+              sub: mockUser.id.toString(),
+              email: mockUser.email,
+              name: mockUser.name,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 horas
+            };
+            
+            // Mock JWT token (em produção seria gerado pelo backend)
+            const mockToken = btoa(JSON.stringify(tokenPayload));
+            localStorage.setItem('auth-token', mockToken);
+            
             set({
               user: mockUser,
               isAuthenticated: true,
@@ -85,6 +98,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Limpar token do localStorage
+        localStorage.removeItem('auth-token');
+        
         set({
           user: null,
           isAuthenticated: false,
@@ -106,6 +122,18 @@ export const useAuthStore = create<AuthState>()(
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
+          
+          // Simular criação de JWT token para novo usuário
+          const tokenPayload = {
+            sub: newUser.id.toString(),
+            email: newUser.email,
+            name: newUser.name,
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 horas
+          };
+          
+          const mockToken = btoa(JSON.stringify(tokenPayload));
+          localStorage.setItem('auth-token', mockToken);
           
           set({
             user: newUser,

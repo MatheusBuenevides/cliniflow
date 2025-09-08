@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { Link } from 'react-router-dom';
+import { useAuth, useAuthRedirect } from '../hooks';
 import { AuthLayout } from '../components/auth';
 import { FormInput, LoadingButton, PasswordStrength } from '../components/ui';
 import { 
@@ -30,11 +30,10 @@ const Register: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   
-  const { register, isAuthenticated, error: authError, clearError } = useAuth();
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  const { register, error: authError, clearError } = useAuth();
+  
+  // Redirecionar se já estiver autenticado
+  useAuthRedirect();
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
