@@ -270,7 +270,7 @@ Requisitos:
 Integre com interfaces AvailableSlot, AppointmentBookingForm e AppointmentCreate.
 ```
 
-### 3.3 Confirmação e Pagamento
+### 3.3 Confirmação e Pagamento -- FEITO -- 
 
 **Prompt:**
 ```

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Clock, User, CheckCircle, ArrowLeft } from 'lucide-react';
 import { AppointmentForm } from '../components/agenda';
-import type { Appointment } from '../types';
+import type { Appointment, BookingConfirmation as BookingConfirmationType } from '../types';
 
 const OnlineBooking: React.FC = () => {
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -12,7 +12,30 @@ const OnlineBooking: React.FC = () => {
     setCompletedAppointment(null);
   };
 
-  const handleBookingComplete = (appointment: Appointment) => {
+  const handleBookingComplete = (confirmation: BookingConfirmationType) => {
+    // Converter BookingConfirmation para Appointment para manter compatibilidade
+    const appointment: Appointment = {
+      id: Math.floor(Math.random() * 10000),
+      patientId: Math.floor(Math.random() * 10000),
+      psychologistId: 1,
+      date: confirmation.appointmentDate,
+      time: confirmation.appointmentTime,
+      duration: 50,
+      type: 'initial',
+      modality: confirmation.modality,
+      status: 'scheduled',
+      price: confirmation.price,
+      notes: '',
+      paymentStatus: confirmation.paymentStatus,
+      patient: {
+        id: Math.floor(Math.random() * 10000),
+        name: confirmation.patientName,
+        phone: confirmation.patientPhone,
+        email: confirmation.patientEmail
+      },
+      createdAt: confirmation.createdAt,
+      updatedAt: confirmation.createdAt
+    };
     setCompletedAppointment(appointment);
     setShowBookingForm(false);
   };

@@ -46,7 +46,7 @@ import { PsychologistProfile } from '../components/psychologist';
 import BookingCTA from '../components/psychologist/BookingCTA';
 import { LoadingSpinner } from '../components/ui';
 import { AppointmentForm } from '../components/agenda';
-import type { Appointment } from '../types';
+import type { Appointment, BookingConfirmation as BookingConfirmationType } from '../types';
 
 const PublicProfile: React.FC = () => {
   const { customUrl } = useParams<{ customUrl: string }>();
@@ -85,7 +85,30 @@ const PublicProfile: React.FC = () => {
     fetchPsychologist();
   }, [customUrl]);
 
-  const handleBookingComplete = (appointment: Appointment) => {
+  const handleBookingComplete = (confirmation: BookingConfirmationType) => {
+    // Converter BookingConfirmation para Appointment para manter compatibilidade
+    const appointment: Appointment = {
+      id: Math.floor(Math.random() * 10000),
+      patientId: Math.floor(Math.random() * 10000),
+      psychologistId: psychologist?.id || 1,
+      date: confirmation.appointmentDate,
+      time: confirmation.appointmentTime,
+      duration: 50,
+      type: 'initial',
+      modality: confirmation.modality,
+      status: 'scheduled',
+      price: confirmation.price,
+      notes: '',
+      paymentStatus: confirmation.paymentStatus,
+      patient: {
+        id: Math.floor(Math.random() * 10000),
+        name: confirmation.patientName,
+        phone: confirmation.patientPhone,
+        email: confirmation.patientEmail
+      },
+      createdAt: confirmation.createdAt,
+      updatedAt: confirmation.createdAt
+    };
     setCompletedAppointment(appointment);
     setShowBookingForm(false);
   };

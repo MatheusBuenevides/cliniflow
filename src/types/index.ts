@@ -227,6 +227,75 @@ export interface PaymentLink {
   expiresAt: string;
   status: 'active' | 'paid' | 'expired' | 'cancelled';
   createdAt: string;
+  paymentMethod?: PaymentMethod;
+  pixCode?: string;
+  qrCode?: string;
+  boletoUrl?: string;
+}
+
+// ===== SISTEMA DE CONFIRMAÇÃO E PAGAMENTO =====
+export interface BookingConfirmation {
+  id: string;
+  appointmentId: number;
+  confirmationCode: string;
+  patientName: string;
+  patientEmail: string;
+  patientPhone: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  modality: SessionModality;
+  price: number;
+  paymentStatus: PaymentStatus;
+  paymentLink?: PaymentLink;
+  instructions: BookingInstructions;
+  emergencyContact?: EmergencyContact;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface BookingInstructions {
+  generalInstructions: string;
+  onlineInstructions?: string;
+  inPersonInstructions?: string;
+  preparationNotes?: string;
+  cancellationPolicy: string;
+  reschedulingPolicy: string;
+  contactInfo: {
+    phone: string;
+    email: string;
+    whatsapp?: string;
+  };
+}
+
+export interface PaymentMethodInfo {
+  id: string;
+  name: string;
+  type: PaymentMethod;
+  icon: string;
+  description: string;
+  processingTime: string;
+  fees?: number;
+  isAvailable: boolean;
+}
+
+export interface PaymentStatusInfo {
+  status: PaymentStatus;
+  message: string;
+  icon: string;
+  color: string;
+  nextSteps?: string[];
+  canRetry: boolean;
+  canCancel: boolean;
+}
+
+export interface NotificationTemplate {
+  id: string;
+  type: 'email' | 'sms' | 'whatsapp';
+  event: 'booking_confirmation' | 'payment_reminder' | 'appointment_reminder' | 'payment_received';
+  subject?: string;
+  template: string;
+  variables: string[];
+  isActive: boolean;
 }
 
 // ===== RELATÓRIOS FINANCEIROS =====

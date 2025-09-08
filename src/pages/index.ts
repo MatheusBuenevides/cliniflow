@@ -8,3 +8,4 @@ export { default as Login } from './Login';
 export { default as Register } from './Register';
 export { default as PublicProfile } from './PublicProfile';
 export { default as OnlineBooking } from './OnlineBooking';
+export { default as BookingDemo } from './BookingDemo';

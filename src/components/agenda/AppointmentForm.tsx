@@ -10,17 +10,17 @@ import type {
   BookingState, 
   AvailabilitySettings 
 } from '../../types/booking';
-import type { SessionModality } from '../../types';
+import type { SessionModality, BookingConfirmation as BookingConfirmationType } from '../../types';
 
 interface AppointmentFormProps {
   psychologistId: number;
-  onBookingComplete: (appointment: any) => void;
+  onBookingComplete: (confirmation: BookingConfirmationType) => void;
   onCancel: () => void;
   className?: string;
 }
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({
-  psychologistId,
+  psychologistId: _psychologistId,
   onBookingComplete,
   onCancel,
   className = ''
@@ -150,36 +150,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }));
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (confirmation: BookingConfirmationType) => {
     setBookingState(prev => ({ ...prev, isLoading: true }));
     
     try {
       // Simular criação do agendamento
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const appointment = {
-        id: Date.now(),
-        patientId: Date.now(),
-        psychologistId,
-        date: bookingState.selectedSlot!.date,
-        time: bookingState.selectedSlot!.time,
-        duration: bookingState.selectedSlot!.duration,
-        type: bookingState.formData.isFirstTime ? 'initial' : 'followUp',
-        modality: bookingState.selectedSlot!.modality,
-        status: 'scheduled',
-        price: bookingState.selectedSlot!.price,
-        notes: bookingState.formData.notes,
-        paymentStatus: 'pending',
-        patient: {
-          name: bookingState.formData.patientName,
-          email: bookingState.formData.patientEmail,
-          phone: bookingState.formData.patientPhone
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      onBookingComplete(appointment);
+      onBookingComplete(confirmation);
     } catch (error) {
       setBookingState(prev => ({
         ...prev,
