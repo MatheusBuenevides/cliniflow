@@ -318,7 +318,7 @@ Use interfaces PaymentLink e Appointment. Simule gateway de pagamento inicialmen
 
 ## 👥 MÓDULO 4: GESTÃO DE PACIENTES E PRONTUÁRIO
 
-### 4.1 Lista e Busca de Pacientes
+### 4.1 Lista e Busca de Pacientes -- FEITO -- 
 
 **Prompt:**
 ```

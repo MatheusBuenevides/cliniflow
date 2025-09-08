@@ -1,108 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import React, { useEffect } from 'react';
 import { usePatientStore } from '../stores/usePatientStore';
+import { PatientList } from '../components/patients';
+import type { Patient } from '../types/patient';
 
 const Patients: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const { 
-    patients, 
-    isLoading, 
-    error, 
-    fetchPatients, 
-    setFilters, 
-    clearError 
+    patients,
+    stats,
+    isLoading,
+    error,
+    filters,
+    savedFilters,
+    fetchPatients,
+    fetchStats,
+    fetchSavedFilters,
+    setFilters,
+    setSearchTerm,
+    saveFilter,
+    loadSavedFilter,
+    deleteSavedFilter,
+    exportPatients,
   } = usePatientStore();
 
   useEffect(() => {
     fetchPatients();
+    fetchStats();
+    fetchSavedFilters();
   }, []);
 
-  useEffect(() => {
-    if (searchTerm) {
-      setFilters({ search: searchTerm });
-      fetchPatients({ search: searchTerm });
-    } else {
-      fetchPatients();
-    }
-  }, [searchTerm]);
+  const handleFiltersChange = (newFilters: any) => {
+    setFilters(newFilters);
+    fetchPatients(newFilters);
+  };
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
-          {error}
-          <button 
-            onClick={clearError}
-            className="ml-2 text-red-800 underline"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    const newFilters = { ...filters, search: term };
+    setFilters(newFilters);
+    fetchPatients(newFilters);
+  };
+
+  const handleViewRecord = (patient: Patient) => {
+    // TODO: Implementar navegação para prontuário
+    console.log('Ver prontuário:', patient);
+  };
+
+  const handleSchedule = (patient: Patient) => {
+    // TODO: Implementar navegação para agendamento
+    console.log('Agendar consulta:', patient);
+  };
+
+  const handleContact = (patient: Patient) => {
+    // TODO: Implementar funcionalidade de contato
+    console.log('Contatar paciente:', patient);
+  };
+
+  const handleEdit = (patient: Patient) => {
+    // TODO: Implementar edição de paciente
+    console.log('Editar paciente:', patient);
+  };
+
+  const handleDelete = (patient: Patient) => {
+    // TODO: Implementar exclusão de paciente
+    console.log('Excluir paciente:', patient);
+  };
+
+  const handleAddPatient = () => {
+    // TODO: Implementar adição de paciente
+    console.log('Adicionar novo paciente');
+  };
+
+  const handleSaveFilter = (name: string, filterData: any) => {
+    saveFilter(name, filterData);
+  };
+
+  const handleLoadFilter = (filter: any) => {
+    loadSavedFilter(filter);
+    fetchPatients(filter.filters);
+  };
+
+  const handleDeleteFilter = (filterId: string) => {
+    deleteSavedFilter(filterId);
+  };
+
+  const handleExport = () => {
+    exportPatients('csv');
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-slate-800">Pacientes</h1>
-        <div className="relative w-full max-w-xs">
-          <Search size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar paciente..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">Gestão de Pacientes</h1>
+        <p className="text-slate-600">
+          Gerencie seus pacientes, visualize estatísticas e acesse informações importantes.
+        </p>
       </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="p-4 font-semibold text-slate-600">Nome</th>
-                <th className="p-4 font-semibold text-slate-600">Data de Cadastro</th>
-                <th className="p-4 font-semibold text-slate-600">Contato</th>
-                <th className="p-4 font-semibold text-slate-600">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patients.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-slate-500">
-                    Nenhum paciente encontrado
-                  </td>
-                </tr>
-              ) : (
-                patients.map(patient => (
-                  <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-4 text-slate-800 font-medium">{patient.name}</td>
-                    <td className="p-4 text-slate-600">
-                      {new Date(patient.createdAt).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      <div>{patient.phone}</div>
-                      <div className="text-sm text-slate-400">{patient.email}</div>
-                    </td>
-                    <td className="p-4">
-                      <button className="text-purple-600 hover:text-purple-800 font-semibold">
-                        Ver Prontuário
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+
+      <PatientList
+        patients={patients}
+        stats={stats || { total: 0, active: 0, newThisMonth: 0, lastAppointment: null }}
+        isLoading={isLoading}
+        error={error}
+        filters={filters}
+        savedFilters={savedFilters}
+        onFiltersChange={handleFiltersChange}
+        onSearchChange={handleSearchChange}
+        onViewRecord={handleViewRecord}
+        onSchedule={handleSchedule}
+        onContact={handleContact}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onExport={handleExport}
+        onSaveFilter={handleSaveFilter}
+        onLoadFilter={handleLoadFilter}
+        onDeleteFilter={handleDeleteFilter}
+        onAddPatient={handleAddPatient}
+      />
     </div>
   );
 };

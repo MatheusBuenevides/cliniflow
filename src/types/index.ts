@@ -1,5 +1,8 @@
 // Tipos principais do sistema CliniFlow - Plataforma para Psicólogos
 
+// ===== TIPOS BÁSICOS =====
+export type PaymentStatus = 'pending' | 'paid' | 'cancelled' | 'refunded';
+
 // ===== PSICÓLOGO =====
 export interface Psychologist {
   id: number;
@@ -55,6 +58,12 @@ export interface Patient {
   profession?: string;
   emergencyContact?: EmergencyContact;
   medicalHistory?: MedicalHistory;
+  avatar?: string; // URL da foto do paciente
+  status: 'active' | 'inactive'; // Status do paciente
+  lastAppointment?: string; // Data da última consulta
+  totalAppointments: number; // Total de consultas
+  nextAppointment?: string; // Próxima consulta agendada
+  paymentStatus?: PaymentStatus; // Status de pagamento mais recente
   createdAt: string;
   updatedAt: string;
   psychologistId: number;
@@ -113,7 +122,6 @@ export interface Appointment {
 export type AppointmentType = 'initial' | 'followUp' | 'emergency' | 'supervision';
 export type SessionModality = 'inPerson' | 'online';
 export type AppointmentStatus = 'scheduled' | 'confirmed' | 'inProgress' | 'completed' | 'cancelled' | 'noShow';
-export type PaymentStatus = 'pending' | 'paid' | 'cancelled' | 'refunded';
 
 // Tipos para criação e atualização de agendamentos
 export type AppointmentCreate = Omit<Appointment, 'id' | 'patient' | 'createdAt' | 'updatedAt'>;
@@ -588,6 +596,44 @@ export interface PatientFilters {
   search?: string;
   sortBy?: 'name' | 'createdAt' | 'lastAppointment';
   sortOrder?: 'asc' | 'desc';
+  status?: 'active' | 'inactive' | 'all';
+  period?: {
+    start: string;
+    end: string;
+  };
+  paymentStatus?: PaymentStatus;
+}
+
+// Tipos para estatísticas de pacientes
+export interface PatientStats {
+  total: number;
+  active: number;
+  newThisMonth: number;
+  lastAppointment: {
+    patientId: number;
+    patientName: string;
+    date: string;
+  } | null;
+}
+
+// Tipos para visualização de pacientes
+export type PatientViewMode = 'list' | 'cards';
+
+// Tipos para ações rápidas
+export interface PatientQuickAction {
+  id: string;
+  label: string;
+  icon: string;
+  action: (patient: Patient) => void;
+  variant?: 'primary' | 'secondary' | 'danger';
+}
+
+// Tipos para filtros salvos
+export interface SavedFilter {
+  id: string;
+  name: string;
+  filters: PatientFilters;
+  createdAt: string;
 }
 
 export interface TransactionFilters {
