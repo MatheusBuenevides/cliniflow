@@ -25,7 +25,7 @@ Este documento apresenta um plano completo de desenvolvimento para o CliniFlow, 
 
 ---
 
-## 🏗️ MÓDULO 1: REFATORAÇÃO E ESTRUTURA BASE
+## 🏗️ MÓDULO 1: REFATORAÇÃO E ESTRUTURA BASE -- FEITO --
 
 ### 1.1 Reorganização da Estrutura do Projeto -- FEITO --
 
@@ -113,7 +113,7 @@ Use as interfaces definidas em src/types/ e mantenha dados mockados temporariame
 
 ## 🔐 MÓDULO 2: SISTEMA DE AUTENTICAÇÃO
 
-### 2.1 Interfaces de Login e Registro
+### 2.1 Interfaces de Login e Registro -- FEITO --
 
 **Prompt:**
 ```

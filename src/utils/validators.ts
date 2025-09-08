@@ -82,3 +82,52 @@ export const isValidURL = (url: string): boolean => {
     return false;
   }
 };
+
+// Validar CRP (Conselho Regional de Psicologia)
+export const isValidCRP = (crp: string): boolean => {
+  // Formato: XX/XXXXXX (2 dígitos, barra, 6 dígitos)
+  const crpRegex = /^\d{2}\/\d{6}$/;
+  return crpRegex.test(crp);
+};
+
+// Validar URL personalizada
+export const isValidCustomUrl = (url: string): boolean => {
+  // Apenas letras minúsculas, números e hífens
+  // Deve começar e terminar com letra ou número
+  // Entre 3 e 30 caracteres
+  const customUrlRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+  return customUrlRegex.test(url) && url.length >= 3 && url.length <= 30;
+};
+
+// Validar senha com critérios específicos
+export const validatePassword = (password: string): {
+  isValid: boolean;
+  errors: string[];
+} => {
+  const errors: string[] = [];
+  
+  if (password.length < 8) {
+    errors.push('A senha deve ter pelo menos 8 caracteres');
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push('A senha deve conter pelo menos uma letra minúscula');
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push('A senha deve conter pelo menos uma letra maiúscula');
+  }
+  
+  if (!/\d/.test(password)) {
+    errors.push('A senha deve conter pelo menos um número');
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('A senha deve conter pelo menos um caractere especial');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};

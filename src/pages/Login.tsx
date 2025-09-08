@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { Navigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { AuthLayout } from '../components/auth';
+import { FormInput, LoadingButton } from '../components/ui';
+import { isValidEmail } from '../utils/validators';
+import { LogIn, Mail, Lock } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, error: authError, clearError } = useAuth();
   const location = useLocation();
   
   const from = location.state?.from?.pathname || '/';
@@ -19,127 +25,164 @@ const Login: React.FC = () => {
     return <Navigate to={from} replace />;
   }
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Senha é obrigatória';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    
+    // Clear auth error when user starts typing
+    if (authError) {
+      clearError();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
+    clearError();
 
     try {
-      await login(email, password);
+      await login(formData.email, formData.password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao fazer login');
+      // Error is handled by the auth store
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-purple-600 rounded-full flex items-center justify-center">
-            <LogIn className="h-6 w-6 text-white" />
+    <AuthLayout
+      title="Entre na sua conta"
+      subtitle="Acesse o CliniFlow para gerenciar sua prática clínica"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <FormInput
+            id="email"
+            name="email"
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            placeholder="seu@email.com"
+            autoComplete="email"
+            required
+            leftIcon={<Mail className="h-5 w-5" />}
+          />
+
+          <FormInput
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            label="Senha"
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+            placeholder="Sua senha"
+            autoComplete="current-password"
+            required
+            isPassword
+            showPasswordToggle
+            showPassword={showPassword}
+            onTogglePassword={() => setShowPassword(!showPassword)}
+            leftIcon={<Lock className="h-5 w-5" />}
+          />
+        </div>
+
+        {/* Remember Me & Forgot Password */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+              Lembrar-me
+            </label>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Entre na sua conta
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Acesse o CliniFlow para gerenciar sua prática
+
+          <div className="text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Esqueceu sua senha?
+            </Link>
+          </div>
+        </div>
+
+        {/* Auth Error */}
+        {authError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+            {authError}
+          </div>
+        )}
+
+        <LoadingButton
+          type="submit"
+          loading={loading}
+          loadingText="Entrando..."
+          fullWidth
+          leftIcon={<LogIn className="h-4 w-4" />}
+        >
+          Entrar
+        </LoadingButton>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Não tem uma conta?{' '}
+            <Link
+              to="/register"
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Cadastre-se
+            </Link>
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="seu@email.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Senha
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Sua senha"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                'Entrar'
-              )}
-            </button>
-          </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Não tem uma conta?{' '}
-              <Link
-                to="/register"
-                className="font-medium text-purple-600 hover:text-purple-500"
-              >
-                Cadastre-se
-              </Link>
-            </p>
-          </div>
-
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-800">
-              <strong>Credenciais de teste:</strong><br />
-              Email: ana.silva@email.com<br />
-              Senha: 123456
-            </p>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Demo Credentials */}
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800">
+            <strong>Credenciais de teste:</strong><br />
+            Email: ana.silva@email.com<br />
+            Senha: 123456
+          </p>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };
 

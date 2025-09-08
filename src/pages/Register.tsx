@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { AuthLayout } from '../components/auth';
+import { FormInput, LoadingButton, PasswordStrength } from '../components/ui';
+import { 
+  isValidEmail, 
+  isValidCRP, 
+  isValidPhone, 
+  isValidCustomUrl,
+  validatePassword 
+} from '../utils/validators';
+import { UserPlus, User, Mail, Lock, Phone, FileText, Globe } from 'lucide-react';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -10,232 +19,324 @@ const Register: React.FC = () => {
     password: '',
     confirmPassword: '',
     crp: '',
-    phone: ''
+    phone: '',
+    customUrl: '',
+    bio: '',
+    specialties: [] as string[],
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   
-  const { isAuthenticated } = useAuth();
+  const { register, isAuthenticated, error: authError, clearError } = useAuth();
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Nome
+    if (!formData.name.trim()) {
+      newErrors.name = 'Nome é obrigatório';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Nome deve ter pelo menos 2 caracteres';
+    }
+
+    // Email
+    if (!formData.email) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!isValidEmail(formData.email)) {
+      newErrors.email = 'Email inválido';
+    }
+
+    // CRP
+    if (!formData.crp) {
+      newErrors.crp = 'CRP é obrigatório';
+    } else if (!isValidCRP(formData.crp)) {
+      newErrors.crp = 'CRP deve estar no formato XX/XXXXXX';
+    }
+
+    // Telefone
+    if (!formData.phone) {
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (!isValidPhone(formData.phone)) {
+      newErrors.phone = 'Telefone inválido';
+    }
+
+    // URL personalizada
+    if (formData.customUrl && !isValidCustomUrl(formData.customUrl)) {
+      newErrors.customUrl = 'URL deve conter apenas letras minúsculas, números e hífens (3-30 caracteres)';
+    }
+
+    // Senha
+    if (!formData.password) {
+      newErrors.password = 'Senha é obrigatória';
+    } else {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        newErrors.password = passwordValidation.errors[0];
+      }
+    }
+
+    // Confirmar senha
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Confirmação de senha é obrigatória';
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'As senhas não coincidem';
+    }
+
+    // Termos
+    if (!acceptTerms) {
+      newErrors.terms = 'Você deve aceitar os termos de uso';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    
+    // Clear auth error when user starts typing
+    if (authError) {
+      clearError();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
+    
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
+    clearError();
 
     try {
-      // Simula cadastro - em produção, faria chamada para API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Redireciona para login após cadastro
-      window.location.href = '/login?registered=true';
+      // Preparar dados para registro
+      const registrationData = {
+        name: formData.name.trim(),
+        email: formData.email,
+        crp: formData.crp,
+        phone: formData.phone,
+        customUrl: formData.customUrl || formData.name.toLowerCase().replace(/\s+/g, '-'),
+        bio: formData.bio || 'Psicólogo(a) clínico(a)',
+        specialties: formData.specialties,
+        workingHours: {},
+        sessionPrices: {
+          initial: 150,
+          followUp: 120,
+          online: 100,
+          duration: 50,
+        },
+      };
+
+      await register(registrationData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar conta');
+      // Error is handled by the auth store
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-purple-600 rounded-full flex items-center justify-center">
-            <UserPlus className="h-6 w-6 text-white" />
-          </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Crie sua conta
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Comece a usar o CliniFlow hoje mesmo
-          </p>
-        </div>
+    <AuthLayout
+      title="Crie sua conta"
+      subtitle="Comece a usar o CliniFlow hoje mesmo"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <FormInput
+            id="name"
+            name="name"
+            type="text"
+            label="Nome Completo"
+            value={formData.name}
+            onChange={handleChange}
+            error={errors.name}
+            placeholder="Dr. João Silva"
+            required
+            leftIcon={<User className="h-5 w-5" />}
+          />
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Nome Completo
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="Dr. João Silva"
-              />
-            </div>
+          <FormInput
+            id="email"
+            name="email"
+            type="email"
+            label="Email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            placeholder="seu@email.com"
+            autoComplete="email"
+            required
+            leftIcon={<Mail className="h-5 w-5" />}
+          />
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="seu@email.com"
-              />
-            </div>
+          <FormInput
+            id="crp"
+            name="crp"
+            type="text"
+            label="CRP"
+            value={formData.crp}
+            onChange={handleChange}
+            error={errors.crp}
+            placeholder="06/123456"
+            required
+            leftIcon={<FileText className="h-5 w-5" />}
+            helperText="Formato: XX/XXXXXX"
+          />
 
-            <div>
-              <label htmlFor="crp" className="block text-sm font-medium text-gray-700">
-                CRP
-              </label>
-              <input
-                id="crp"
-                name="crp"
-                type="text"
-                required
-                value={formData.crp}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="06/123456"
-              />
-            </div>
+          <FormInput
+            id="phone"
+            name="phone"
+            type="tel"
+            label="Telefone"
+            value={formData.phone}
+            onChange={handleChange}
+            error={errors.phone}
+            placeholder="(11) 99999-9999"
+            required
+            leftIcon={<Phone className="h-5 w-5" />}
+          />
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Telefone
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Senha
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Mínimo 6 caracteres"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirmar Senha
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="Confirme sua senha"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+          <FormInput
+            id="customUrl"
+            name="customUrl"
+            type="text"
+            label="URL Personalizada (opcional)"
+            value={formData.customUrl}
+            onChange={handleChange}
+            error={errors.customUrl}
+            placeholder="joao-silva"
+            leftIcon={<Globe className="h-5 w-5" />}
+            helperText="Sua página pública será: cliniflow.com/joao-silva"
+          />
 
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                'Criar Conta'
-              )}
-            </button>
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
+              Biografia (opcional)
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              rows={3}
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+              placeholder="Conte um pouco sobre sua abordagem e especialidades..."
+            />
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Já tem uma conta?{' '}
-              <Link
-                to="/login"
-                className="font-medium text-purple-600 hover:text-purple-500"
-              >
-                Faça login
+          <FormInput
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            label="Senha"
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+            placeholder="Mínimo 8 caracteres"
+            autoComplete="new-password"
+            required
+            isPassword
+            showPasswordToggle
+            showPassword={showPassword}
+            onTogglePassword={() => setShowPassword(!showPassword)}
+            leftIcon={<Lock className="h-5 w-5" />}
+          />
+
+          {formData.password && (
+            <PasswordStrength password={formData.password} />
+          )}
+
+          <FormInput
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showConfirmPassword ? 'text' : 'password'}
+            label="Confirmar Senha"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={errors.confirmPassword}
+            placeholder="Confirme sua senha"
+            autoComplete="new-password"
+            required
+            isPassword
+            showPasswordToggle
+            showPassword={showConfirmPassword}
+            onTogglePassword={() => setShowConfirmPassword(!showConfirmPassword)}
+            leftIcon={<Lock className="h-5 w-5" />}
+          />
+        </div>
+
+        {/* Terms and Privacy */}
+        <div className="space-y-3">
+          <div className="flex items-start">
+            <input
+              id="accept-terms"
+              name="accept-terms"
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded mt-1"
+            />
+            <label htmlFor="accept-terms" className="ml-2 block text-sm text-gray-700">
+              Eu aceito os{' '}
+              <Link to="/terms" className="text-primary-600 hover:text-primary-500 font-medium">
+                Termos de Uso
+              </Link>{' '}
+              e a{' '}
+              <Link to="/privacy" className="text-primary-600 hover:text-primary-500 font-medium">
+                Política de Privacidade
               </Link>
-            </p>
+            </label>
           </div>
-        </form>
-      </div>
-    </div>
+          {errors.terms && (
+            <p className="text-sm text-red-600">{errors.terms}</p>
+          )}
+        </div>
+
+        {/* Auth Error */}
+        {authError && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+            {authError}
+          </div>
+        )}
+
+        <LoadingButton
+          type="submit"
+          loading={loading}
+          loadingText="Criando conta..."
+          fullWidth
+          leftIcon={<UserPlus className="h-4 w-4" />}
+        >
+          Criar Conta
+        </LoadingButton>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Já tem uma conta?{' '}
+            <Link
+              to="/login"
+              className="font-medium text-primary-600 hover:text-primary-500"
+            >
+              Faça login
+            </Link>
+          </p>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };
 
