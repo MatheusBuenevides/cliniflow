@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useVideoStore } from '../../stores/useVideoStore';
+import { SessionRecorder } from './SessionRecorder';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface SessionControlsProps {
   appointmentId: number;
@@ -11,24 +14,51 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
   isPsychologist = false,
   onClose
 }) => {
-  const [isRecording, setIsRecording] = useState(false);
+  const { 
+    currentSession, 
+    endSession, 
+    getSessionReport,
+    isLoading 
+  } = useVideoStore();
+  
   const [sessionNotes, setSessionNotes] = useState('');
-
-  const handleToggleRecording = () => {
-    if (isPsychologist) {
-      setIsRecording(!isRecording);
-      // Em produção, aqui seria feita a chamada para iniciar/parar gravação
-    }
-  };
+  const [, setSessionReport] = useState<any>(null);
 
   const handleSaveNotes = () => {
     // Em produção, aqui seria salvo no prontuário
     console.log('Notas da sessão:', sessionNotes);
   };
 
-  const handleEndSession = () => {
-    // Em produção, aqui seria finalizada a sessão
-    onClose();
+  const handleEndSession = async () => {
+    try {
+      await endSession();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao finalizar sessão:', error);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      const report = await getSessionReport();
+      setSessionReport(report);
+    } catch (error) {
+      console.error('Erro ao gerar relatório:', error);
+    }
+  };
+
+  const getSessionDuration = () => {
+    if (!currentSession?.startTime) return '00:00:00';
+    
+    const start = new Date(currentSession.startTime);
+    const now = new Date();
+    const diff = now.getTime() - start.getTime();
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -47,36 +77,16 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
           </button>
         </div>
 
-        {/* Controles de Gravação (apenas para psicólogo) */}
-        {isPsychologist && (
-          <div className="mb-6">
-            <h3 className="text-white font-medium mb-3">Gravação da Sessão</h3>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleToggleRecording}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  isRecording
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-slate-700 text-white hover:bg-slate-600'
-                }`}
-              >
-                <div className={`w-3 h-3 rounded-full ${isRecording ? 'bg-white' : 'bg-red-500'}`}></div>
-                <span>{isRecording ? 'Parar Gravação' : 'Iniciar Gravação'}</span>
-              </button>
-              
-              {isRecording && (
-                <div className="flex items-center space-x-2 text-red-400">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm">Gravando...</span>
-                </div>
-              )}
-            </div>
-            
-            <p className="text-xs text-slate-400 mt-2">
-              A gravação só será iniciada com o consentimento do paciente.
-            </p>
-          </div>
-        )}
+        {/* Controles de Gravação */}
+        <div className="mb-6">
+          <h3 className="text-white font-medium mb-3">Gravação da Sessão</h3>
+          <SessionRecorder 
+            isPsychologist={isPsychologist}
+            onRecordingComplete={(url) => {
+              console.log('Gravação concluída:', url);
+            }}
+          />
+        </div>
 
         {/* Notas da Sessão */}
         <div className="mb-6">
@@ -137,7 +147,7 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
             </div>
             <div className="flex justify-between">
               <span>Duração:</span>
-              <span>00:15:32</span>
+              <span>{getSessionDuration()}</span>
             </div>
             <div className="flex justify-between">
               <span>Participantes:</span>
@@ -152,11 +162,22 @@ export const SessionControls: React.FC<SessionControlsProps> = ({
 
         {/* Botões de Ação */}
         <div className="flex flex-col space-y-3">
+          {isPsychologist && (
+            <button
+              onClick={handleGenerateReport}
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {isLoading ? <LoadingSpinner size="sm" /> : 'Gerar Relatório'}
+            </button>
+          )}
+          
           <button
             onClick={handleEndSession}
-            className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
+            disabled={isLoading}
+            className="w-full bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
           >
-            Finalizar Sessão
+            {isLoading ? <LoadingSpinner size="sm" /> : 'Finalizar Sessão'}
           </button>
           
           <button

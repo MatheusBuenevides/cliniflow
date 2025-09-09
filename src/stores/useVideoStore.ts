@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import type { 
   VideoSession, 
-  VideoSessionStatus, 
   ChatMessage, 
   ConnectionQuality 
 } from '../types/index';
+import { sessionService, type CreateSessionRequest, type JoinSessionRequest } from '../services/sessionService';
 
 interface VideoState {
   // Estado
@@ -18,52 +18,22 @@ interface VideoState {
   error: string | null;
 
   // Actions
-  startSession: (appointmentId: number) => Promise<void>;
+  startSession: (appointmentId: number, psychologistId?: number, patientId?: number) => Promise<void>;
   endSession: () => Promise<void>;
-  joinSession: (roomId: string) => Promise<void>;
+  joinSession: (roomId: string, participantId?: number, participantType?: 'psychologist' | 'patient') => Promise<void>;
   leaveSession: () => Promise<void>;
-  sendChatMessage: (message: string, senderId: number, senderName: string) => void;
+  sendChatMessage: (message: string, senderId: number, senderName: string) => Promise<void>;
   toggleVideo: () => void;
   toggleAudio: () => void;
-  updateConnectionQuality: (quality: ConnectionQuality) => void;
+  updateConnectionQuality: (quality: ConnectionQuality) => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  testEquipment: () => Promise<any>;
+  startRecording: () => Promise<void>;
+  stopRecording: () => Promise<string>;
+  getSessionReport: () => Promise<any>;
 }
 
-// Mock data temporário para desenvolvimento
-const mockVideoSession: VideoSession = {
-  id: 'session_123',
-  appointmentId: 2,
-  roomId: 'room_789',
-  startTime: '2024-01-25T16:00:00.000Z',
-  participantIds: [1, 2], // psychologistId, patientId
-  status: 'active',
-  recordingEnabled: false,
-  chatMessages: [
-    {
-      id: 'msg_1',
-      senderId: 1,
-      senderName: 'Dr. Ana Silva',
-      message: 'Olá! Como você está se sentindo hoje?',
-      timestamp: '2024-01-25T16:00:30.000Z',
-      type: 'text',
-    },
-    {
-      id: 'msg_2',
-      senderId: 2,
-      senderName: 'João Oliveira',
-      message: 'Olá doutora! Estou um pouco ansioso, mas melhor que ontem.',
-      timestamp: '2024-01-25T16:01:15.000Z',
-      type: 'text',
-    },
-  ],
-  connectionQuality: {
-    video: 'good',
-    audio: 'excellent',
-    latency: 45,
-    bandwidth: 2500,
-  },
-};
 
 export const useVideoStore = create<VideoState>((set, get) => ({
   // Estado inicial
@@ -77,36 +47,29 @@ export const useVideoStore = create<VideoState>((set, get) => ({
   error: null,
 
   // Actions
-  startSession: async (appointmentId: number) => {
+  startSession: async (appointmentId: number, psychologistId = 1, patientId = 2) => {
     set({ isLoading: true, error: null, connectionStatus: 'connecting' });
     
     try {
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock de criação de sessão
-      const newSession: VideoSession = {
-        id: `session_${Date.now()}`,
+      const request: CreateSessionRequest = {
         appointmentId,
-        roomId: `room_${Date.now()}`,
-        startTime: new Date().toISOString(),
-        participantIds: [1, appointmentId], // Mock: psychologistId e patientId
-        status: 'active',
+        psychologistId,
+        patientId,
         recordingEnabled: false,
-        chatMessages: [],
-        connectionQuality: {
-          video: 'excellent',
-          audio: 'excellent',
-          latency: 30,
-          bandwidth: 3000,
+        sessionConfig: {
+          allowChat: true,
+          allowScreenShare: true,
+          maxParticipants: 2,
         },
       };
+
+      const newSession = await sessionService.createSession(request);
       
       set({
         currentSession: newSession,
         connectionStatus: 'connected',
-        chatMessages: [],
-        connectionQuality: newSession.connectionQuality,
+        chatMessages: newSession.chatMessages || [],
+        connectionQuality: newSession.connectionQuality || null,
         isLoading: false,
         error: null,
       });
@@ -127,8 +90,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sessionService.endSession(currentSession.id);
       
       const endedSession: VideoSession = {
         ...currentSession,
@@ -159,19 +121,17 @@ export const useVideoStore = create<VideoState>((set, get) => ({
     }
   },
 
-  joinSession: async (roomId: string) => {
+  joinSession: async (roomId: string, participantId = 2, participantType: 'psychologist' | 'patient' = 'patient') => {
     set({ isLoading: true, error: null, connectionStatus: 'connecting' });
     
     try {
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock de sessão existente
-      const existingSession: VideoSession = {
-        ...mockVideoSession,
+      const request: JoinSessionRequest = {
         roomId,
-        status: 'active',
+        participantId,
+        participantType,
       };
+
+      const existingSession = await sessionService.joinSession(request);
       
       set({
         currentSession: existingSession,
@@ -220,38 +180,44 @@ export const useVideoStore = create<VideoState>((set, get) => ({
     }
   },
 
-  sendChatMessage: (message: string, senderId: number, senderName: string) => {
-    const { chatMessages } = get();
+  sendChatMessage: async (message: string, senderId: number, senderName: string) => {
+    const { currentSession } = get();
+    if (!currentSession) return;
     
-    const newMessage: ChatMessage = {
-      id: `msg_${Date.now()}`,
-      senderId,
-      senderName,
-      message,
-      timestamp: new Date().toISOString(),
-      type: 'text',
-    };
-    
-    set({
-      chatMessages: [...chatMessages, newMessage],
-    });
-    
-    // Simular resposta automática (mock)
-    if (senderId !== 1) { // Se não for o psicólogo
-      setTimeout(() => {
-        const responseMessage: ChatMessage = {
-          id: `msg_${Date.now() + 1}`,
-          senderId: 1,
-          senderName: 'Dr. Ana Silva',
-          message: 'Entendo. Vamos conversar mais sobre isso.',
-          timestamp: new Date().toISOString(),
-          type: 'text',
-        };
-        
-        set(state => ({
-          chatMessages: [...state.chatMessages, responseMessage],
-        }));
-      }, 2000);
+    try {
+      const newMessage = await sessionService.sendChatMessage(
+        currentSession.id,
+        message,
+        senderId,
+        senderName
+      );
+      
+      set(state => ({
+        chatMessages: [...state.chatMessages, newMessage],
+      }));
+      
+      // Simular resposta automática (mock)
+      if (senderId !== 1) { // Se não for o psicólogo
+        setTimeout(async () => {
+          try {
+            const responseMessage = await sessionService.sendChatMessage(
+              currentSession.id,
+              'Entendo. Vamos conversar mais sobre isso.',
+              1,
+              'Dr. Ana Silva'
+            );
+            
+            set(state => ({
+              chatMessages: [...state.chatMessages, responseMessage],
+            }));
+          } catch (error) {
+            console.error('Erro ao enviar resposta automática:', error);
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      set({ error: 'Erro ao enviar mensagem' });
     }
   },
 
@@ -265,18 +231,24 @@ export const useVideoStore = create<VideoState>((set, get) => ({
     set({ isAudioEnabled: !isAudioEnabled });
   },
 
-  updateConnectionQuality: (quality: ConnectionQuality) => {
-    set({ connectionQuality: quality });
-    
-    // Atualizar também na sessão atual se existir
+  updateConnectionQuality: async (quality: ConnectionQuality) => {
     const { currentSession } = get();
-    if (currentSession) {
+    if (!currentSession) return;
+    
+    try {
+      await sessionService.updateConnectionQuality(currentSession.id, quality);
+      
+      set({ connectionQuality: quality });
+      
+      // Atualizar também na sessão atual
       set({
         currentSession: {
           ...currentSession,
           connectionQuality: quality,
         },
       });
+    } catch (error) {
+      console.error('Erro ao atualizar qualidade da conexão:', error);
     }
   },
 
@@ -286,5 +258,91 @@ export const useVideoStore = create<VideoState>((set, get) => ({
 
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
+  },
+
+  testEquipment: async () => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const result = await sessionService.testEquipment();
+      set({ isLoading: false });
+      return result;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao testar equipamentos',
+      });
+      throw error;
+    }
+  },
+
+  startRecording: async () => {
+    const { currentSession } = get();
+    if (!currentSession) return;
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      await sessionService.startRecording(currentSession.id);
+      
+      set({
+        currentSession: {
+          ...currentSession,
+          recordingEnabled: true,
+        },
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao iniciar gravação',
+      });
+    }
+  },
+
+  stopRecording: async () => {
+    const { currentSession } = get();
+    if (!currentSession) return '';
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      const recordingUrl = await sessionService.stopRecording(currentSession.id);
+      
+      set({
+        currentSession: {
+          ...currentSession,
+          recordingEnabled: false,
+        },
+        isLoading: false,
+      });
+      
+      return recordingUrl;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao parar gravação',
+      });
+      throw error;
+    }
+  },
+
+  getSessionReport: async () => {
+    const { currentSession } = get();
+    if (!currentSession) return null;
+    
+    set({ isLoading: true, error: null });
+    
+    try {
+      const report = await sessionService.getSessionReport(currentSession.id);
+      set({ isLoading: false });
+      return report;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erro ao obter relatório',
+      });
+      throw error;
+    }
   },
 }));

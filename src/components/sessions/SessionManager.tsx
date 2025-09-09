@@ -3,6 +3,7 @@ import { useVideoStore } from '../../stores/useVideoStore';
 import { VideoRoom } from './VideoRoom';
 import { WaitingRoom } from './WaitingRoom';
 import { SessionControls } from './SessionControls';
+import { EquipmentTest } from './EquipmentTest';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface SessionManagerProps {
@@ -25,8 +26,9 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     clearError
   } = useVideoStore();
 
-  const [sessionPhase, setSessionPhase] = useState<'waiting' | 'active' | 'ended'>('waiting');
+  const [sessionPhase, setSessionPhase] = useState<'equipment-test' | 'waiting' | 'active' | 'ended'>('equipment-test');
   const [showControls, setShowControls] = useState(false);
+  const [, setEquipmentTestResult] = useState<any>(null);
 
   // Inicializar sessão quando o componente monta
   useEffect(() => {
@@ -68,6 +70,15 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     } catch (error) {
       console.error('Erro ao inicializar sessão:', error);
     }
+  };
+
+  const handleEquipmentTestComplete = (result: any) => {
+    setEquipmentTestResult(result);
+    setSessionPhase('waiting');
+  };
+
+  const handleSkipEquipmentTest = () => {
+    setSessionPhase('waiting');
   };
 
   const handleStartSession = () => {
@@ -126,6 +137,14 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
 
   // Renderizar componente baseado na fase da sessão
   switch (sessionPhase) {
+    case 'equipment-test':
+      return (
+        <EquipmentTest
+          onTestComplete={handleEquipmentTestComplete}
+          onSkip={handleSkipEquipmentTest}
+        />
+      );
+
     case 'waiting':
       return (
         <WaitingRoom

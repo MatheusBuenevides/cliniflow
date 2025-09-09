@@ -13,3 +13,6 @@ export { ConnectionStatus } from './ConnectionStatus';
 export { SessionManager } from './SessionManager';
 export { WaitingRoom } from './WaitingRoom';
 export { SessionControls } from './SessionControls';
+export { EquipmentTest } from './EquipmentTest';
+export { SessionRecorder } from './SessionRecorder';
+export { SessionIntegration } from './SessionIntegration';

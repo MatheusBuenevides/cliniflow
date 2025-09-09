@@ -4,6 +4,7 @@ import { VideoPlayer } from './VideoPlayer';
 import { ControlPanel } from './ControlPanel';
 import { ChatPanel } from './ChatPanel';
 import { ConnectionStatus } from './ConnectionStatus';
+import { SessionIntegration } from './SessionIntegration';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface VideoRoomProps {
@@ -188,6 +189,14 @@ export const VideoRoom: React.FC<VideoRoomProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col">
+      {/* Integração com Sistema */}
+      <SessionIntegration 
+        appointmentId={appointmentId}
+        onSessionComplete={(data) => {
+          console.log('Sessão integrada:', data);
+        }}
+      />
+
       {/* Header da Sessão */}
       <div className="bg-slate-800 border-b border-slate-700 px-6 py-4">
         <div className="flex items-center justify-between">

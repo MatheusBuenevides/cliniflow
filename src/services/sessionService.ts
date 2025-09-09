@@ -1,381 +1,479 @@
 import type { 
-  SessionRecord, 
-  SessionRecordCreate, 
-  SessionRecordUpdate,
-  SessionTag,
-  SessionTemplate,
-  SessionFilters,
-  EvolutionReport,
-  SessionAuditLog,
-  SessionAttachment
+  VideoSession, 
+  ChatMessage, 
+  ConnectionQuality
 } from '../types';
 
-// Mock data para sessões
-const mockSessions: SessionRecord[] = [
-  {
-    id: 1,
-    appointmentId: 1,
-    patientId: 1,
-    psychologistId: 1,
-    sessionNumber: 1,
-    date: '2024-01-15',
-    duration: 50,
-    mainComplaint: 'Ansiedade generalizada e dificuldades no trabalho',
-    clinicalObservations: 'Paciente apresentou-se ansiosa, com relato de preocupações excessivas sobre performance no trabalho. Demonstrou boa insight sobre seus padrões de pensamento. Trabalhamos técnicas de respiração e identificação de pensamentos automáticos.',
-    therapeuticPlan: 'Continuar com TCC focando em técnicas de relaxamento e reestruturação cognitiva. Próxima sessão: trabalhar com registro de pensamentos.',
-    evolution: 'Paciente demonstrou melhora na identificação de gatilhos de ansiedade. Comprometeu-se a praticar exercícios de respiração diariamente.',
-    homeworkAssigned: 'Registrar 3 situações de ansiedade durante a semana, anotando pensamentos, emoções e comportamentos.',
-    tags: ['ansiedade', 'tcc', 'trabalho'],
-    attachments: [],
-    isEncrypted: true,
-    lastModified: '2024-01-15T16:30:00Z',
-    createdAt: '2024-01-15T16:30:00Z',
-    updatedAt: '2024-01-15T16:30:00Z'
-  },
-  {
-    id: 2,
-    appointmentId: 2,
-    patientId: 1,
-    psychologistId: 1,
-    sessionNumber: 2,
-    date: '2024-01-22',
-    duration: 50,
-    mainComplaint: 'Continuação do tratamento para ansiedade',
-    clinicalObservations: 'Paciente trouxe o registro de pensamentos conforme combinado. Identificamos padrões de pensamento catastrófico. Trabalhamos na técnica de questionamento socrático.',
-    therapeuticPlan: 'Manter foco em TCC. Introduzir técnicas de mindfulness na próxima sessão.',
-    evolution: 'Boa aderência ao tratamento. Paciente relatou redução de 30% na intensidade da ansiedade.',
-    homeworkAssigned: 'Praticar questionamento socrático em 2 situações de ansiedade. Iniciar prática de mindfulness 5 min/dia.',
-    tags: ['ansiedade', 'tcc', 'mindfulness'],
-    attachments: [],
-    isEncrypted: true,
-    lastModified: '2024-01-22T16:30:00Z',
-    createdAt: '2024-01-22T16:30:00Z',
-    updatedAt: '2024-01-22T16:30:00Z'
-  }
-];
+// Interface para criação de sessão
+export interface CreateSessionRequest {
+  appointmentId: number;
+  psychologistId: number;
+  patientId: number;
+  recordingEnabled?: boolean;
+  sessionConfig?: {
+    allowChat: boolean;
+    allowScreenShare: boolean;
+    maxParticipants: number;
+  };
+}
 
-const mockTags: SessionTag[] = [
-  { id: 1, name: 'ansiedade', color: '#ef4444', psychologistId: 1, usageCount: 15, createdAt: '2024-01-01T00:00:00Z' },
-  { id: 2, name: 'depressão', color: '#3b82f6', psychologistId: 1, usageCount: 8, createdAt: '2024-01-01T00:00:00Z' },
-  { id: 3, name: 'tcc', color: '#10b981', psychologistId: 1, usageCount: 12, createdAt: '2024-01-01T00:00:00Z' },
-  { id: 4, name: 'mindfulness', color: '#8b5cf6', psychologistId: 1, usageCount: 6, createdAt: '2024-01-01T00:00:00Z' },
-  { id: 5, name: 'trabalho', color: '#f59e0b', psychologistId: 1, usageCount: 9, createdAt: '2024-01-01T00:00:00Z' },
-  { id: 6, name: 'relacionamentos', color: '#ec4899', psychologistId: 1, usageCount: 7, createdAt: '2024-01-01T00:00:00Z' }
-];
+// Interface para entrada na sessão
+export interface JoinSessionRequest {
+  roomId: string;
+  participantId: number;
+  participantType: 'psychologist' | 'patient';
+  token?: string;
+}
 
-const mockTemplates: SessionTemplate[] = [
-  {
-    id: 1,
-    name: 'Sessão Inicial',
-    description: 'Template para primeira sessão com novo paciente',
-    content: {
-      mainComplaint: '',
-      clinicalObservations: 'Paciente apresentou-se [descrição do estado emocional/comportamental]. Relatou [principais queixas]. Demonstrou [observações sobre insight, motivação, etc.].',
-      therapeuticPlan: 'Plano terapêutico: [abordagem escolhida]. Objetivos: [objetivos específicos]. Próximos passos: [ações para próxima sessão].',
-      evolution: '',
-      homeworkAssigned: '',
-      tags: []
-    },
-    isDefault: true,
-    psychologistId: 1,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  },
-  {
-    id: 2,
-    name: 'Sessão TCC',
-    description: 'Template para sessões de Terapia Cognitivo-Comportamental',
-    content: {
-      mainComplaint: '',
-      clinicalObservations: 'Paciente trouxe [tarefas de casa]. Trabalhamos com [técnicas utilizadas]. Identificamos [padrões de pensamento/comportamento].',
-      therapeuticPlan: 'Continuar com TCC focando em [área específica]. Próxima sessão: [técnicas/objetivos].',
-      evolution: 'Paciente demonstrou [mudanças observadas]. Relatou [melhoras/dificuldades].',
-      homeworkAssigned: '[Tarefas específicas para casa]',
-      tags: ['tcc']
-    },
-    isDefault: false,
-    psychologistId: 1,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z'
-  }
-];
+// Interface para configurações de sessão
+export interface SessionConfig {
+  allowChat: boolean;
+  allowScreenShare: boolean;
+  allowRecording: boolean;
+  maxParticipants: number;
+  sessionDuration: number; // em minutos
+  autoEndAfterInactivity: number; // em minutos
+}
 
-// Simulação de criptografia (em produção seria real)
-const encryptText = (text: string): string => {
-  // Simulação de criptografia - em produção usar biblioteca real
-  return btoa(text);
-};
+// Interface para teste de equipamentos
+export interface EquipmentTest {
+  microphone: {
+    working: boolean;
+    level: number; // 0-100
+    error?: string;
+  };
+  camera: {
+    working: boolean;
+    resolution: string;
+    error?: string;
+  };
+  internet: {
+    speed: number; // em Mbps
+    latency: number; // em ms
+    stability: 'excellent' | 'good' | 'fair' | 'poor';
+  };
+}
 
-const decryptText = (encryptedText: string): string => {
-  // Simulação de descriptografia - em produção usar biblioteca real
-  try {
-    return atob(encryptedText);
-  } catch {
-    return encryptedText; // Se não conseguir descriptografar, retorna o texto original
-  }
-};
+// Interface para transcrição
+export interface TranscriptionSegment {
+  id: string;
+  speaker: 'psychologist' | 'patient';
+  text: string;
+  timestamp: number; // em segundos
+  confidence: number; // 0-1
+}
+
+// Interface para relatório de sessão
+export interface SessionReport {
+  sessionId: string;
+  appointmentId: number;
+  duration: number; // em minutos
+  participants: {
+    psychologist: {
+      id: number;
+      name: string;
+      joinTime: string;
+      leaveTime?: string;
+    };
+    patient: {
+      id: number;
+      name: string;
+      joinTime: string;
+      leaveTime?: string;
+    };
+  };
+  quality: {
+    averageConnectionQuality: ConnectionQuality;
+    disconnections: number;
+    reconnections: number;
+  };
+  chat: {
+    totalMessages: number;
+    psychologistMessages: number;
+    patientMessages: number;
+  };
+  recording?: {
+    enabled: boolean;
+    duration: number;
+    fileSize: number;
+    url?: string;
+  };
+  transcription?: {
+    enabled: boolean;
+    segments: TranscriptionSegment[];
+    accuracy: number;
+  };
+}
 
 class SessionService {
-  // Buscar sessões com filtros
-  async getSessions(filters: SessionFilters = {}): Promise<SessionRecord[]> {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simular delay de rede
-    
-    let filteredSessions = [...mockSessions];
-    
-    // Aplicar filtros
-    if (filters.patientId) {
-      filteredSessions = filteredSessions.filter(s => s.patientId === filters.patientId);
+  private sessions: Map<string, VideoSession> = new Map();
+  private activeSessions: Set<string> = new Set();
+
+  // Criar nova sessão de telepsicologia
+  async createSession(request: CreateSessionRequest): Promise<VideoSession> {
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const sessionId = `session_${Date.now()}_${request.appointmentId}`;
+      const roomId = `room_${Date.now()}_${request.appointmentId}`;
+
+      const newSession: VideoSession = {
+        id: sessionId,
+        appointmentId: request.appointmentId,
+        roomId,
+        startTime: new Date().toISOString(),
+        participantIds: [request.psychologistId, request.patientId],
+        status: 'waiting',
+        recordingEnabled: request.recordingEnabled || false,
+        chatMessages: [],
+        connectionQuality: {
+          video: 'excellent',
+          audio: 'excellent',
+          latency: 30,
+          bandwidth: 3000,
+        },
+      };
+
+      // Armazenar sessão
+      this.sessions.set(sessionId, newSession);
+      this.activeSessions.add(sessionId);
+
+      // Simular criação de sala no servidor WebRTC
+      await this.createWebRTCRoom(roomId);
+
+      return newSession;
+    } catch (error) {
+      console.error('Erro ao criar sessão:', error);
+      throw new Error('Falha ao criar sessão de telepsicologia');
     }
-    
-    if (filters.startDate) {
-      filteredSessions = filteredSessions.filter(s => s.date >= filters.startDate!);
-    }
-    
-    if (filters.endDate) {
-      filteredSessions = filteredSessions.filter(s => s.date <= filters.endDate!);
-    }
-    
-    if (filters.tags && filters.tags.length > 0) {
-      filteredSessions = filteredSessions.filter(s => 
-        filters.tags!.some(tag => s.tags.includes(tag))
-      );
-    }
-    
-    if (filters.searchText) {
-      const searchLower = filters.searchText.toLowerCase();
-      filteredSessions = filteredSessions.filter(s => 
-        s.mainComplaint?.toLowerCase().includes(searchLower) ||
-        s.clinicalObservations.toLowerCase().includes(searchLower) ||
-        s.therapeuticPlan?.toLowerCase().includes(searchLower) ||
-        s.evolution?.toLowerCase().includes(searchLower)
-      );
-    }
-    
-    // Ordenação
-    const sortBy = filters.sortBy || 'date';
-    const sortOrder = filters.sortOrder || 'desc';
-    
-    filteredSessions.sort((a, b) => {
-      let aValue: any, bValue: any;
-      
-      switch (sortBy) {
-        case 'date':
-          aValue = new Date(a.date).getTime();
-          bValue = new Date(b.date).getTime();
-          break;
-        case 'sessionNumber':
-          aValue = a.sessionNumber;
-          bValue = b.sessionNumber;
-          break;
-        case 'createdAt':
-          aValue = new Date(a.createdAt).getTime();
-          bValue = new Date(b.createdAt).getTime();
-          break;
-        default:
-          aValue = new Date(a.date).getTime();
-          bValue = new Date(b.date).getTime();
+  }
+
+  // Entrar em sessão existente
+  async joinSession(request: JoinSessionRequest): Promise<VideoSession> {
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Buscar sessão existente
+      const session = Array.from(this.sessions.values())
+        .find(s => s.roomId === request.roomId);
+
+      if (!session) {
+        throw new Error('Sessão não encontrada');
       }
-      
-      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-    });
-    
-    return filteredSessions;
-  }
-  
-  // Buscar sessão por ID
-  async getSessionById(id: number): Promise<SessionRecord | null> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const session = mockSessions.find(s => s.id === id);
-    if (!session) return null;
-    
-    // Descriptografar campos sensíveis
-    const decryptedSession = {
-      ...session,
-      clinicalObservations: decryptText(session.clinicalObservations),
-      therapeuticPlan: session.therapeuticPlan ? decryptText(session.therapeuticPlan) : undefined,
-      evolution: session.evolution ? decryptText(session.evolution) : undefined,
-      homeworkAssigned: session.homeworkAssigned ? decryptText(session.homeworkAssigned) : undefined
-    };
-    
-    return decryptedSession;
-  }
-  
-  // Criar nova sessão
-  async createSession(data: SessionRecordCreate): Promise<SessionRecord> {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const newSession: SessionRecord = {
-      id: Math.max(...mockSessions.map(s => s.id)) + 1,
-      sessionNumber: mockSessions.filter(s => s.patientId === data.patientId).length + 1,
-      isEncrypted: true,
-      lastModified: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...data,
-      // Criptografar campos sensíveis
-      clinicalObservations: encryptText(data.clinicalObservations),
-      therapeuticPlan: data.therapeuticPlan ? encryptText(data.therapeuticPlan) : undefined,
-      evolution: data.evolution ? encryptText(data.evolution) : undefined,
-      homeworkAssigned: data.homeworkAssigned ? encryptText(data.homeworkAssigned) : undefined
-    };
-    
-    mockSessions.push(newSession);
-    return newSession;
-  }
-  
-  // Atualizar sessão
-  async updateSession(id: number, data: SessionRecordUpdate): Promise<SessionRecord> {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
-    const sessionIndex = mockSessions.findIndex(s => s.id === id);
-    if (sessionIndex === -1) {
-      throw new Error('Sessão não encontrada');
-    }
-    
-    const updatedSession: SessionRecord = {
-      ...mockSessions[sessionIndex],
-      ...data,
-      updatedAt: new Date().toISOString(),
-      lastModified: new Date().toISOString(),
-      // Criptografar campos sensíveis se foram alterados
-      clinicalObservations: data.clinicalObservations ? encryptText(data.clinicalObservations) : mockSessions[sessionIndex].clinicalObservations,
-      therapeuticPlan: data.therapeuticPlan ? encryptText(data.therapeuticPlan) : mockSessions[sessionIndex].therapeuticPlan,
-      evolution: data.evolution ? encryptText(data.evolution) : mockSessions[sessionIndex].evolution,
-      homeworkAssigned: data.homeworkAssigned ? encryptText(data.homeworkAssigned) : mockSessions[sessionIndex].homeworkAssigned
-    };
-    
-    mockSessions[sessionIndex] = updatedSession;
-    return updatedSession;
-  }
-  
-  // Deletar sessão
-  async deleteSession(id: number): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const sessionIndex = mockSessions.findIndex(s => s.id === id);
-    if (sessionIndex === -1) {
-      throw new Error('Sessão não encontrada');
-    }
-    
-    mockSessions.splice(sessionIndex, 1);
-  }
-  
-  // Buscar tags
-  async getTags(): Promise<SessionTag[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return [...mockTags];
-  }
-  
-  // Criar nova tag
-  async createTag(name: string, color?: string): Promise<SessionTag> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const newTag: SessionTag = {
-      id: Math.max(...mockTags.map(t => t.id)) + 1,
-      name: name.toLowerCase(),
-      color: color || '#6b7280',
-      psychologistId: 1,
-      usageCount: 0,
-      createdAt: new Date().toISOString()
-    };
-    
-    mockTags.push(newTag);
-    return newTag;
-  }
-  
-  // Buscar templates
-  async getTemplates(): Promise<SessionTemplate[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return [...mockTemplates];
-  }
-  
-  // Criar template
-  async createTemplate(data: Omit<SessionTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<SessionTemplate> {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    const newTemplate: SessionTemplate = {
-      id: Math.max(...mockTemplates.map(t => t.id)) + 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      ...data
-    };
-    
-    mockTemplates.push(newTemplate);
-    return newTemplate;
-  }
-  
-  // Gerar relatório de evolução
-  async getEvolutionReport(patientId: number, startDate: string, endDate: string): Promise<EvolutionReport> {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    
-    const patientSessions = mockSessions.filter(s => 
-      s.patientId === patientId && 
-      s.date >= startDate && 
-      s.date <= endDate
-    );
-    
-    // Calcular estatísticas
-    const totalSessions = patientSessions.length;
-    const averageDuration = patientSessions.reduce((sum, s) => sum + s.duration, 0) / totalSessions;
-    
-    // Tags mais comuns
-    const tagCounts: Record<string, number> = {};
-    patientSessions.forEach(session => {
-      session.tags.forEach(tag => {
-        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-      });
-    });
-    
-    const mostCommonTags = Object.entries(tagCounts)
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-    
-    return {
-      patientId,
-      patientName: 'Ana Silva', // Mock - seria buscado do serviço de pacientes
-      period: { start: startDate, end: endDate },
-      sessions: patientSessions.map(s => ({
-        sessionNumber: s.sessionNumber,
-        date: s.date,
-        mainComplaint: s.mainComplaint,
-        evolution: s.evolution,
-        tags: s.tags
-      })),
-      summary: {
-        totalSessions,
-        averageSessionDuration: Math.round(averageDuration),
-        mostCommonTags,
-        progressIndicators: ['Redução da ansiedade', 'Melhora na qualidade do sono', 'Aumento da autoestima']
+
+      // Verificar se a sessão ainda está ativa
+      if (session.status === 'ended' || session.status === 'cancelled') {
+        throw new Error('Sessão já foi finalizada');
       }
-    };
+
+      // Validar token se fornecido
+      if (request.token && !this.validateSessionToken(request.token)) {
+        throw new Error('Token de acesso inválido');
+      }
+
+      // Atualizar status se necessário
+      if (session.status === 'waiting') {
+        session.status = 'active';
+      }
+
+      return session;
+    } catch (error) {
+      console.error('Erro ao entrar na sessão:', error);
+      throw new Error('Falha ao entrar na sessão');
+    }
   }
-  
-  // Log de auditoria
-  async logAccess(sessionId: number, action: SessionAuditLog['action'], details?: string): Promise<void> {
-    // Em produção, isso seria enviado para o backend
-    console.log(`Audit Log: Session ${sessionId}, Action: ${action}, Details: ${details}`);
+
+  // Finalizar sessão
+  async endSession(sessionId: string): Promise<void> {
+    try {
+      const session = this.sessions.get(sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Atualizar status
+      session.status = 'ended';
+      session.endTime = new Date().toISOString();
+
+      // Remover da lista de sessões ativas
+      this.activeSessions.delete(sessionId);
+
+      // Simular finalização no servidor WebRTC
+      await this.endWebRTCRoom(session.roomId);
+
+      // Gerar relatório da sessão
+      await this.generateSessionReport(sessionId);
+    } catch (error) {
+      console.error('Erro ao finalizar sessão:', error);
+      throw new Error('Falha ao finalizar sessão');
+    }
   }
-  
-  // Upload de anexo
-  async uploadAttachment(sessionId: number, file: File, description?: string): Promise<SessionAttachment> {
+
+  // Obter sessão por ID
+  async getSession(sessionId: string): Promise<VideoSession | null> {
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      return this.sessions.get(sessionId) || null;
+    } catch (error) {
+      console.error('Erro ao buscar sessão:', error);
+      return null;
+    }
+  }
+
+  // Obter sessão por appointmentId
+  async getSessionByAppointment(appointmentId: number): Promise<VideoSession | null> {
+    try {
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      return Array.from(this.sessions.values())
+        .find(s => s.appointmentId === appointmentId) || null;
+    } catch (error) {
+      console.error('Erro ao buscar sessão por agendamento:', error);
+      return null;
+    }
+  }
+
+  // Enviar mensagem no chat
+  async sendChatMessage(
+    sessionId: string, 
+    message: string, 
+    senderId: number, 
+    senderName: string
+  ): Promise<ChatMessage> {
+    try {
+      const session = this.sessions.get(sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      const newMessage: ChatMessage = {
+        id: `msg_${Date.now()}`,
+        senderId,
+        senderName,
+        message,
+        timestamp: new Date().toISOString(),
+        type: 'text',
+      };
+
+      // Adicionar mensagem à sessão
+      if (!session.chatMessages) {
+        session.chatMessages = [];
+      }
+      session.chatMessages.push(newMessage);
+
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      return newMessage;
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      throw new Error('Falha ao enviar mensagem');
+    }
+  }
+
+  // Atualizar qualidade da conexão
+  async updateConnectionQuality(
+    sessionId: string, 
+    quality: ConnectionQuality
+  ): Promise<void> {
+    try {
+      const session = this.sessions.get(sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      session.connectionQuality = quality;
+
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 100));
+    } catch (error) {
+      console.error('Erro ao atualizar qualidade da conexão:', error);
+    }
+  }
+
+  // Testar equipamentos antes da sessão
+  async testEquipment(): Promise<EquipmentTest> {
+    try {
+      // Simular delay do teste
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Mock de teste de equipamentos
+      return {
+        microphone: {
+          working: true,
+          level: 75,
+        },
+        camera: {
+          working: true,
+          resolution: '1920x1080',
+        },
+        internet: {
+          speed: 25.5,
+          latency: 45,
+          stability: 'excellent',
+        },
+      };
+    } catch (error) {
+      console.error('Erro ao testar equipamentos:', error);
+      throw new Error('Falha ao testar equipamentos');
+    }
+  }
+
+  // Iniciar gravação da sessão
+  async startRecording(sessionId: string): Promise<void> {
+    try {
+      const session = this.sessions.get(sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      session.recordingEnabled = true;
+    } catch (error) {
+      console.error('Erro ao iniciar gravação:', error);
+      throw new Error('Falha ao iniciar gravação');
+    }
+  }
+
+  // Parar gravação da sessão
+  async stopRecording(sessionId: string): Promise<string> {
+    try {
+      const session = this.sessions.get(sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      session.recordingEnabled = false;
+
+      // Retornar URL do arquivo de gravação
+      return `https://storage.cliniflow.com/recordings/${sessionId}.mp4`;
+    } catch (error) {
+      console.error('Erro ao parar gravação:', error);
+      throw new Error('Falha ao parar gravação');
+    }
+  }
+
+  // Obter relatório da sessão
+  async getSessionReport(sessionId: string): Promise<SessionReport> {
+    try {
+      const session = this.sessions.get(sessionId);
+      if (!session) {
+        throw new Error('Sessão não encontrada');
+      }
+
+      // Simular delay da API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const duration = session.endTime && session.startTime
+        ? Math.floor((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 60000)
+        : 0;
+
+      return {
+        sessionId,
+        appointmentId: session.appointmentId,
+        duration,
+        participants: {
+          psychologist: {
+            id: session.participantIds[0],
+            name: 'Dr. Ana Silva',
+            joinTime: session.startTime || new Date().toISOString(),
+            leaveTime: session.endTime,
+          },
+          patient: {
+            id: session.participantIds[1],
+            name: 'Paciente',
+            joinTime: session.startTime || new Date().toISOString(),
+            leaveTime: session.endTime,
+          },
+        },
+        quality: {
+          averageConnectionQuality: session.connectionQuality || {
+            video: 'good',
+            audio: 'good',
+            latency: 50,
+            bandwidth: 2000,
+          },
+          disconnections: 0,
+          reconnections: 0,
+        },
+        chat: {
+          totalMessages: session.chatMessages?.length || 0,
+          psychologistMessages: session.chatMessages?.filter(m => m.senderId === session.participantIds[0]).length || 0,
+          patientMessages: session.chatMessages?.filter(m => m.senderId === session.participantIds[1]).length || 0,
+        },
+        recording: session.recordingEnabled ? {
+          enabled: true,
+          duration,
+          fileSize: duration * 10, // Mock: 10MB por minuto
+        } : undefined,
+      };
+    } catch (error) {
+      console.error('Erro ao obter relatório da sessão:', error);
+      throw new Error('Falha ao obter relatório da sessão');
+    }
+  }
+
+  // Métodos privados para simulação
+
+  private async createWebRTCRoom(roomId: string): Promise<void> {
+    // Simular criação de sala no servidor WebRTC
+    console.log(`Criando sala WebRTC: ${roomId}`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  private async endWebRTCRoom(roomId: string): Promise<void> {
+    // Simular finalização de sala no servidor WebRTC
+    console.log(`Finalizando sala WebRTC: ${roomId}`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  private validateSessionToken(token: string): boolean {
+    // Simular validação de token
+    return token.length > 10;
+  }
+
+  private async generateSessionReport(sessionId: string): Promise<void> {
+    // Simular geração de relatório
+    console.log(`Gerando relatório para sessão: ${sessionId}`);
     await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  // Obter sessões ativas
+  getActiveSessions(): VideoSession[] {
+    return Array.from(this.sessions.values())
+      .filter(s => this.activeSessions.has(s.id));
+  }
+
+  // Limpar sessões antigas
+  cleanupOldSessions(): void {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
-    const attachment: SessionAttachment = {
-      id: Math.floor(Math.random() * 10000),
-      sessionId,
-      fileName: `attachment_${Date.now()}_${file.name}`,
-      originalName: file.name,
-      fileType: file.type,
-      fileSize: file.size,
-      description,
-      isEncrypted: true,
-      uploadedAt: new Date().toISOString()
-    };
-    
-    return attachment;
+    for (const [sessionId, session] of this.sessions.entries()) {
+      if (session.endTime && new Date(session.endTime) < oneHourAgo) {
+        this.sessions.delete(sessionId);
+        this.activeSessions.delete(sessionId);
+      }
+    }
   }
 }
 
+// Instância singleton do serviço
 export const sessionService = new SessionService();
+
+// Limpar sessões antigas a cada 30 minutos
+setInterval(() => {
+  sessionService.cleanupOldSessions();
+}, 30 * 60 * 1000);

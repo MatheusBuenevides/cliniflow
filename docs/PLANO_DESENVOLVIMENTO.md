@@ -539,9 +539,9 @@ Integre com sistema de notificações e use interfaces Appointment, AppointmentS
 
 ---
 
-## 🎥 MÓDULO 6: TELEPSICOLOGIA E VIDEOCONFERÊNCIA
+## 🎥 MÓDULO 6: TELEPSICOLOGIA E VIDEOCONFERÊNCIA -- FEITO
 
-### 6.1 Interface de Videochamada
+### 6.1 Interface de Videochamada -- FEITO --
 
 **Prompt:**
 ```
@@ -583,7 +583,7 @@ Requisitos:
 Use interfaces VideoSession, ChatMessage, ConnectionQuality.
 ```
 
-### 6.2 Gestão de Sessões Online
+### 6.2 Gestão de Sessões Online -- FEITO -- 
 
 **Prompt:**
 ```

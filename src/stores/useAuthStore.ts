@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Psychologist } from '../types/psychologist';
+import type { Psychologist } from '../types';
 
 interface AuthState {
   // Estado

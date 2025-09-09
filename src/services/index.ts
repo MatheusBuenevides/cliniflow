@@ -4,4 +4,5 @@ export { patientService } from './patientService';
 export { financialService } from './financialService';
 export { paymentService, mockPaymentGateway } from './paymentService';
 export { notificationService } from './notificationService';
+export { sessionService } from './sessionService';
 export { mockData } from './mockData';
