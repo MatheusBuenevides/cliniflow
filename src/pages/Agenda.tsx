@@ -1,38 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useAppointmentStore } from '../stores/useAppointmentStore';
-import { AppointmentForm } from '../components/agenda';
+import { 
+  AppointmentForm, 
+  Calendar, 
+  AppointmentFormAdvanced,
+  CancellationModal,
+  AppointmentCard
+} from '../components/agenda';
+import type { Appointment } from '../types';
 
 const Agenda: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
   const [showBookingForm, setShowBookingForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const { 
     appointments, 
     isLoading, 
     error, 
     fetchAppointments, 
-    clearError 
+    clearError,
+    updateAppointment,
+    cancelAppointment,
+    confirmAppointment,
+    completeAppointment
   } = useAppointmentStore();
 
-  const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-  const startDay = startOfMonth.getDay();
-
-  const daysInMonth = [];
-  for (let i = 1; i <= endOfMonth.getDate(); i++) {
-    daysInMonth.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), i));
-  }
-
-  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-
-  const today = new Date();
-
   useEffect(() => {
-    const startDate = startOfMonth.toISOString().split('T')[0];
-    const endDate = endOfMonth.toISOString().split('T')[0];
-    fetchAppointments({ startDate, endDate });
-  }, [currentDate, fetchAppointments]);
+    // Carregar agendamentos dos próximos 30 dias
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 30);
+    
+    fetchAppointments({ 
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    });
+  }, [fetchAppointments]);
 
   if (error) {
     return (
@@ -54,9 +59,75 @@ const Agenda: React.FC = () => {
     console.log('Agendamento criado:', appointment);
     setShowBookingForm(false);
     // Recarregar a agenda
-    const startDate = startOfMonth.toISOString().split('T')[0];
-    const endDate = endOfMonth.toISOString().split('T')[0];
-    fetchAppointments({ startDate, endDate });
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 30);
+    
+    fetchAppointments({ 
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    });
+  };
+
+  const handleAppointmentClick = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    // Aqui você pode abrir um modal ou navegar para detalhes do agendamento
+    console.log('Agendamento selecionado:', appointment);
+  };
+
+  const handleSlotClick = (date: string, time: string) => {
+    console.log('Slot selecionado:', date, time);
+    setShowBookingForm(true);
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowEditForm(true);
+  };
+
+  const handleCancelAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowCancellationModal(true);
+  };
+
+  const handleConfirmAppointment = async (appointment: Appointment) => {
+    try {
+      await confirmAppointment(appointment.id);
+      await refreshAppointments();
+    } catch (error) {
+      console.error('Erro ao confirmar agendamento:', error);
+    }
+  };
+
+  const handleCompleteAppointment = async (appointment: Appointment) => {
+    try {
+      await completeAppointment(appointment.id);
+      await refreshAppointments();
+    } catch (error) {
+      console.error('Erro ao finalizar agendamento:', error);
+    }
+  };
+
+  const handleCancellationConfirm = async (appointment: Appointment, reason: string, notifyPatient: boolean) => {
+    try {
+      await cancelAppointment(appointment.id, reason);
+      await refreshAppointments();
+      setShowCancellationModal(false);
+      setSelectedAppointment(null);
+    } catch (error) {
+      console.error('Erro ao cancelar agendamento:', error);
+    }
+  };
+
+  const refreshAppointments = async () => {
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + 30);
+    
+    await fetchAppointments({ 
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0]
+    });
   };
 
   if (showBookingForm) {
@@ -77,9 +148,14 @@ const Agenda: React.FC = () => {
             </p>
           </div>
 
-          <AppointmentForm
+          <AppointmentFormAdvanced
+            mode="create"
             psychologistId={1} // Mock ID
-            onBookingComplete={handleBookingComplete}
+            onSave={(appointment) => {
+              console.log('Agendamento criado:', appointment);
+              setShowBookingForm(false);
+              refreshAppointments();
+            }}
             onCancel={() => setShowBookingForm(false)}
           />
         </div>
@@ -87,68 +163,86 @@ const Agenda: React.FC = () => {
     );
   }
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-slate-800">Agenda</h1>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setShowBookingForm(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Novo Agendamento</span>
-          </button>
-          <div className="flex items-center space-x-2">
-            <button onClick={prevMonth} className="p-2 rounded-md hover:bg-slate-200">
-              <ArrowLeft size={20} />
+  if (showEditForm && selectedAppointment) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                setShowEditForm(false);
+                setSelectedAppointment(null);
+              }}
+              className="flex items-center space-x-2 text-slate-600 hover:text-slate-800 transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar para Agenda</span>
             </button>
-            <h2 className="text-xl font-semibold text-slate-700 w-40 text-center">
-              {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-            </h2>
-            <button onClick={nextMonth} className="p-2 rounded-md hover:bg-slate-200">
-              <ArrowRight size={20} />
-            </button>
+            <h1 className="text-3xl font-bold text-slate-800">Editar Agendamento</h1>
+            <p className="text-slate-600 mt-2">
+              Atualize as informações do agendamento
+            </p>
           </div>
+
+          <AppointmentFormAdvanced
+            appointment={selectedAppointment}
+            mode="edit"
+            psychologistId={1} // Mock ID
+            onSave={(appointment) => {
+              console.log('Agendamento atualizado:', appointment);
+              setShowEditForm(false);
+              setSelectedAppointment(null);
+              refreshAppointments();
+            }}
+            onCancel={() => {
+              setShowEditForm(false);
+              setSelectedAppointment(null);
+            }}
+          />
         </div>
       </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-        </div>
-      ) : (
-        <div className="bg-white p-6 rounded-2xl shadow-sm">
-          <div className="grid grid-cols-7 gap-2 text-center font-semibold text-slate-500 text-sm mb-4">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => <div key={day}>{day}</div>)}
-          </div>
-          <div className="grid grid-cols-7 gap-2">
-            {Array(startDay).fill(null).map((_, i) => <div key={`empty-${i}`}></div>)}
-            {daysInMonth.map(day => {
-              const dateString = day.toISOString().split('T')[0];
-              const dayAppointments = appointments.filter(apt => apt.date === dateString);
-              const isToday = day.toDateString() === today.toDateString();
+    );
+  }
 
-              return (
-                <div key={day.toString()} className={`p-2 border rounded-lg h-32 flex flex-col ${isToday ? 'border-purple-500 bg-purple-50' : 'border-slate-200'}`}>
-                  <span className={`font-bold ${isToday ? 'text-purple-600' : 'text-slate-600'}`}>{day.getDate()}</span>
-                  <div className="mt-1 space-y-1 overflow-y-auto">
-                    {dayAppointments.map(apt => (
-                      <div key={apt.id} className={`text-xs p-1 rounded ${
-                        apt.status === 'completed' ? 'bg-green-200 text-green-800' :
-                        apt.status === 'cancelled' ? 'bg-red-200 text-red-800' :
-                        apt.status === 'confirmed' ? 'bg-blue-200 text-blue-800' :
-                        'bg-purple-200 text-purple-800'
-                      }`}>
-                        {apt.time} - {apt.patient.name.split(' ')[0]}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+  return (
+    <div className="space-y-6">
+      {/* Header da Agenda */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Agenda</h1>
+          <p className="text-slate-600 mt-1">
+            Gerencie seus agendamentos e visualize sua agenda de forma intuitiva
+          </p>
         </div>
+        <button
+          onClick={() => setShowBookingForm(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Novo Agendamento</span>
+        </button>
+      </div>
+
+      {/* Calendário Avançado */}
+      <Calendar
+        appointments={appointments}
+        onSlotClick={handleSlotClick}
+        onAppointmentClick={handleAppointmentClick}
+        availableSlots={[]}
+        blockedSlots={[]}
+      />
+
+      {/* Modal de Cancelamento */}
+      {selectedAppointment && (
+        <CancellationModal
+          appointment={selectedAppointment}
+          isOpen={showCancellationModal}
+          onClose={() => {
+            setShowCancellationModal(false);
+            setSelectedAppointment(null);
+          }}
+          onConfirm={handleCancellationConfirm}
+        />
       )}
     </div>
   );
