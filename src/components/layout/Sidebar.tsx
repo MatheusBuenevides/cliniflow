@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart, Calendar, Users, DollarSign, Settings, LogOut } from 'lucide-react';
+import { BarChart, Calendar, Users, DollarSign, Video, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks';
 
 interface SidebarProps {
@@ -22,6 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, user }) =>
     { name: 'Agenda', icon: <Calendar size={20} />, path: '/agenda' },
     { name: 'Pacientes', icon: <Users size={20} />, path: '/pacientes' },
     { name: 'Financeiro', icon: <DollarSign size={20} />, path: '/financeiro' },
+    { name: 'Telepsicologia', icon: <Video size={20} />, path: '/telepsicologia' },
     { name: 'Configurações', icon: <Settings size={20} />, path: '/configuracoes' },
   ];
 

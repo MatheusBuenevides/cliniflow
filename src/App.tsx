@@ -13,6 +13,7 @@ const Patients = React.lazy(() => import('./pages/Patients'));
 const PatientDetail = React.lazy(() => import('./pages/PatientDetail'));
 const Financials = React.lazy(() => import('./pages/Financials'));
 const Settings = React.lazy(() => import('./pages/Settings'));
+const Telepsicologia = React.lazy(() => import('./pages/Telepsicologia'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
 const PublicProfile = React.lazy(() => import('./pages/PublicProfile'));
@@ -46,6 +47,7 @@ export default function App() {
                 <Route path="pacientes" element={<Patients />} />
                 <Route path="pacientes/:id" element={<PatientDetail />} />
                 <Route path="financeiro" element={<Financials />} />
+                <Route path="telepsicologia" element={<Telepsicologia />} />
                 <Route path="configuracoes" element={<Settings />} />
               </Route>
               
