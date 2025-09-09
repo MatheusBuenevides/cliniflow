@@ -378,6 +378,43 @@ export interface PaymentMethodInfo {
   isAvailable: boolean;
 }
 
+// Interfaces para o sistema de pagamentos
+export interface PaymentRequest {
+  amount: number;
+  currency: string;
+  description: string;
+  paymentMethod: PaymentMethod;
+  customerData: {
+    name: string;
+    email: string;
+    document: string;
+    phone?: string;
+  };
+  metadata?: Record<string, string>;
+}
+
+export interface PaymentResponse {
+  id: string;
+  status: PaymentStatus;
+  paymentLink?: PaymentLink;
+  transactionId?: string;
+  gatewayResponse?: any;
+}
+
+export interface RefundRequest {
+  paymentId: string;
+  amount: number;
+  reason: string;
+  notes?: string;
+}
+
+export interface RefundResponse {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  refundId: string;
+  estimatedDate: string;
+}
+
 export interface PaymentStatusInfo {
   status: PaymentStatus;
   message: string;

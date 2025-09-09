@@ -11,6 +11,14 @@ export { PIXQRCode } from './PIXQRCode';
 export { default as PaymentStatusComponent } from './PaymentStatus';
 export { BookingInstructions } from './BookingInstructions';
 
+// Componentes avançados do sistema de pagamento
+export { PaymentForm } from './PaymentForm';
+export { BoletoViewer } from './BoletoViewer';
+export { RefundManager } from './RefundManager';
+export { PaymentTracker } from './PaymentTracker';
+export { PaymentLinkManager } from './PaymentLinkManager';
+export { AuditLogViewer } from './AuditLogViewer';
+
 // Novos componentes do sistema de agenda avançado
 export { Calendar } from './Calendar';
 export { CalendarOptimized, CalendarLoading } from './CalendarOptimized';

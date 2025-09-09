@@ -713,7 +713,7 @@ Requisitos:
 Use interfaces Transaction, TransactionCategory, TransactionType.
 ```
 
-### 7.3 Gateway de Pagamentos
+### 7.3 Gateway de Pagamentos -- FEITO --
 
 **Prompt:**
 ```

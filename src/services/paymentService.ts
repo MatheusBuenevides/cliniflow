@@ -1,342 +1,418 @@
-import { apiClient } from './api';
 import type { 
-  PaymentLink, 
   PaymentMethod, 
-  PaymentStatus,
-  BookingConfirmation,
-  NotificationTemplate
+  PaymentStatus, 
+  PaymentLink
 } from '../types';
+import { auditService } from './auditService';
 
-// Serviço para gerenciar pagamentos e confirmações
-export class PaymentService {
-  // Gerar link de pagamento
-  async generatePaymentLink(appointmentId: number, amount: number, method: PaymentMethod) {
-    const paymentData = {
-      appointmentId,
-      amount,
-      method,
-      description: `Consulta psicológica - Agendamento #${appointmentId}`,
-      expiresIn: 24 * 60 * 60 * 1000 // 24 horas em millisegundos
-    };
-
-    return apiClient.post<PaymentLink>('/payments/generate-link', paymentData);
-  }
-
-  // Verificar status do pagamento
-  async checkPaymentStatus(paymentId: string) {
-    return apiClient.get<{ status: PaymentStatus; paidAt?: string }>(`/payments/${paymentId}/status`);
-  }
-
-  // Processar pagamento PIX
-  async processPixPayment(paymentId: string, pixCode: string) {
-    return apiClient.post<{ status: PaymentStatus; transactionId?: string }>('/payments/pix', {
-      paymentId,
-      pixCode
-    });
-  }
-
-  // Processar pagamento com cartão
-  async processCardPayment(paymentId: string, cardData: any) {
-    return apiClient.post<{ status: PaymentStatus; transactionId?: string }>('/payments/card', {
-      paymentId,
-      cardData
-    });
-  }
-
-  // Gerar boleto bancário
-  async generateBoleto(paymentId: string) {
-    return apiClient.post<{ boletoUrl: string; barcode: string }>('/payments/boleto', {
-      paymentId
-    });
-  }
-
-  // Cancelar pagamento
-  async cancelPayment(paymentId: string, reason?: string) {
-    return apiClient.post<{ status: PaymentStatus }>('/payments/cancel', {
-      paymentId,
-      reason
-    });
-  }
-
-  // Estornar pagamento
-  async refundPayment(paymentId: string, amount?: number) {
-    return apiClient.post<{ status: PaymentStatus; refundId: string }>('/payments/refund', {
-      paymentId,
-      amount
-    });
-  }
-
-  // ===== SISTEMA DE CONFIRMAÇÃO =====
-
-  // Criar confirmação de agendamento
-  async createBookingConfirmation(appointmentData: any) {
-    return apiClient.post<BookingConfirmation>('/bookings/confirmation', appointmentData);
-  }
-
-  // Buscar confirmação por código
-  async getConfirmationByCode(confirmationCode: string) {
-    return apiClient.get<BookingConfirmation>(`/bookings/confirmation/${confirmationCode}`);
-  }
-
-  // Atualizar status da confirmação
-  async updateConfirmationStatus(confirmationId: string, status: string) {
-    return apiClient.put<BookingConfirmation>(`/bookings/confirmation/${confirmationId}/status`, {
-      status
-    });
-  }
-
-  // ===== SISTEMA DE NOTIFICAÇÕES =====
-
-  // Enviar confirmação por email
-  async sendEmailConfirmation(confirmationId: string) {
-    return apiClient.post('/notifications/email/confirmation', { confirmationId });
-  }
-
-  // Enviar lembrete de pagamento
-  async sendPaymentReminder(paymentId: string) {
-    return apiClient.post('/notifications/email/payment-reminder', { paymentId });
-  }
-
-  // Enviar lembrete de consulta
-  async sendAppointmentReminder(appointmentId: number) {
-    return apiClient.post('/notifications/email/appointment-reminder', { appointmentId });
-  }
-
-  // Enviar notificação por WhatsApp
-  async sendWhatsAppNotification(phone: string, message: string) {
-    return apiClient.post('/notifications/whatsapp', { phone, message });
-  }
-
-  // Enviar SMS
-  async sendSMS(phone: string, message: string) {
-    return apiClient.post('/notifications/sms', { phone, message });
-  }
-
-  // ===== TEMPLATES DE NOTIFICAÇÃO =====
-
-  // Buscar templates de notificação
-  async getNotificationTemplates() {
-    return apiClient.get<NotificationTemplate[]>('/notifications/templates');
-  }
-
-  // Atualizar template de notificação
-  async updateNotificationTemplate(templateId: string, template: Partial<NotificationTemplate>) {
-    return apiClient.put<NotificationTemplate>(`/notifications/templates/${templateId}`, template);
-  }
-
-  // ===== RELATÓRIOS E ESTATÍSTICAS =====
-
-  // Buscar estatísticas de pagamento
-  async getPaymentStats(period: { start: string; end: string }) {
-    return apiClient.get('/payments/stats', { params: period });
-  }
-
-  // Buscar relatório de confirmações
-  async getConfirmationReport(period: { start: string; end: string }) {
-    return apiClient.get('/bookings/confirmation-report', { params: period });
-  }
+// Interfaces para integração com gateways
+interface GatewayConfig {
+  stripe: {
+    publicKey: string;
+    secretKey: string;
+    webhookSecret: string;
+  };
+  pagseguro: {
+    email: string;
+    token: string;
+    sandbox: boolean;
+  };
+  pix: {
+    clientId: string;
+    clientSecret: string;
+    certificatePath: string;
+  };
 }
 
-// ===== IMPLEMENTAÇÃO SIMULADA =====
+interface PaymentRequest {
+  amount: number;
+  currency: string;
+  description: string;
+  paymentMethod: PaymentMethod;
+  customerData: {
+    name: string;
+    email: string;
+    document: string;
+    phone?: string;
+  };
+  metadata?: Record<string, string>;
+}
 
-// Simulação de gateway de pagamento
-export class MockPaymentGateway {
-  private static instance: MockPaymentGateway;
-  private payments: Map<string, any> = new Map();
-  private confirmations: Map<string, BookingConfirmation> = new Map();
+interface PaymentResponse {
+  id: string;
+  status: PaymentStatus;
+  paymentLink?: PaymentLink;
+  transactionId?: string;
+  gatewayResponse?: any;
+}
 
-  static getInstance(): MockPaymentGateway {
-    if (!MockPaymentGateway.instance) {
-      MockPaymentGateway.instance = new MockPaymentGateway();
-    }
-    return MockPaymentGateway.instance;
+interface RefundRequest {
+  paymentId: string;
+  amount: number;
+  reason: string;
+  notes?: string;
+}
+
+interface RefundResponse {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  refundId: string;
+  estimatedDate: string;
+}
+
+class PaymentService {
+  private config: GatewayConfig;
+
+  constructor() {
+    // Configuração mockada para desenvolvimento
+    this.config = {
+      stripe: {
+        publicKey: 'pk_test_mock_stripe_key',
+        secretKey: 'sk_test_mock_stripe_secret',
+        webhookSecret: 'whsec_mock_webhook_secret'
+      },
+      pagseguro: {
+        email: 'test@pagseguro.com',
+        token: 'mock_pagseguro_token',
+        sandbox: true
+      },
+      pix: {
+        clientId: 'mock_pix_client_id',
+        clientSecret: 'mock_pix_client_secret',
+        certificatePath: '/path/to/certificate.pem'
+      }
+    };
   }
 
-  // Simular geração de link de pagamento
-  generatePaymentLink(appointmentId: number, amount: number, method: PaymentMethod): PaymentLink {
-    const paymentId = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+  /**
+   * Processa um pagamento usando o gateway apropriado
+   */
+  async processPayment(request: PaymentRequest): Promise<PaymentResponse> {
+    const paymentId = `payment_${Date.now()}`;
+    
+    try {
+      // Log do início do processamento
+      await auditService.logPaymentEvent(
+        'payment_created',
+        paymentId,
+        {
+          amount: request.amount,
+          method: request.paymentMethod,
+          status: 'pending',
+          customerEmail: request.customerData.email,
+          customerDocument: request.customerData.document
+        },
+        {
+          userId: request.customerData.email, // Mock user ID
+          success: true
+        }
+      );
 
-    const paymentLink: PaymentLink = {
-      id: paymentId,
-      appointmentId,
-      amount,
-      description: `Consulta psicológica - Agendamento #${appointmentId}`,
-      url: `https://pagamento.exemplo.com/pay/${paymentId}`,
-      expiresAt: expiresAt.toISOString(),
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      paymentMethod: method,
-      pixCode: method === 'pix' ? this.generatePixCode(amount) : undefined,
-      qrCode: method === 'pix' ? this.generateQRCode(paymentId) : undefined,
-      boletoUrl: method === 'boleto' ? `https://boleto.exemplo.com/${paymentId}` : undefined
+      let response: PaymentResponse;
+
+      switch (request.paymentMethod) {
+        case 'creditCard':
+        case 'debitCard':
+          response = await this.processCardPayment(request);
+          break;
+        
+        case 'pix':
+          response = await this.processPixPayment(request);
+          break;
+        
+        case 'boleto':
+          response = await this.processBoletoPayment(request);
+          break;
+        
+        default:
+          throw new Error(`Método de pagamento não suportado: ${request.paymentMethod}`);
+      }
+
+      // Log do sucesso do processamento
+      await auditService.logPaymentEvent(
+        'payment_processed',
+        paymentId,
+        {
+          amount: request.amount,
+          method: request.paymentMethod,
+          status: response.status,
+          customerEmail: request.customerData.email,
+          customerDocument: request.customerData.document
+        },
+        {
+          userId: request.customerData.email,
+          success: true
+        }
+      );
+
+      return response;
+    } catch (error) {
+      // Log do erro
+      await auditService.logPaymentEvent(
+        'payment_failed',
+        paymentId,
+        {
+          amount: request.amount,
+          method: request.paymentMethod,
+          status: 'cancelled',
+          customerEmail: request.customerData.email,
+          customerDocument: request.customerData.document
+        },
+        {
+          userId: request.customerData.email,
+          success: false,
+          errorMessage: error instanceof Error ? error.message : 'Erro desconhecido'
+        }
+      );
+
+      console.error('Erro ao processar pagamento:', error);
+      throw new Error('Falha ao processar pagamento');
+    }
+  }
+
+  /**
+   * Processa pagamento com cartão (Stripe/PagSeguro)
+   */
+  private async processCardPayment(_request: PaymentRequest): Promise<PaymentResponse> {
+    // Simular processamento com Stripe
+    const mockResponse = {
+      id: `card_${Date.now()}`,
+      status: 'paid' as PaymentStatus,
+      transactionId: `txn_${Date.now()}`,
+      gatewayResponse: {
+        stripe_payment_intent_id: `pi_${Date.now()}`,
+        status: 'succeeded'
+      }
     };
 
-    this.payments.set(paymentId, {
-      ...paymentLink,
-      status: 'pending',
-      createdAt: new Date()
-    });
-
-    return paymentLink;
-  }
-
-  // Simular verificação de status
-  checkPaymentStatus(paymentId: string): { status: PaymentStatus; paidAt?: string } {
-    const payment = this.payments.get(paymentId);
-    if (!payment) {
-      throw new Error('Pagamento não encontrado');
-    }
-
-    return {
-      status: payment.status,
-      paidAt: payment.paidAt
-    };
-  }
-
-  // Simular processamento de pagamento
-  async processPayment(paymentId: string, method: PaymentMethod): Promise<{ status: PaymentStatus; transactionId?: string }> {
-    const payment = this.payments.get(paymentId);
-    if (!payment) {
-      throw new Error('Pagamento não encontrado');
-    }
-
-    if (payment.status !== 'pending') {
-      throw new Error('Pagamento já processado');
-    }
-
-    // Simular delay de processamento
+    // Simular delay da API
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Simular 90% de sucesso
-    const isSuccess = Math.random() > 0.1;
-    
-    if (isSuccess) {
-      payment.status = 'paid';
-      payment.paidAt = new Date().toISOString();
-      payment.transactionId = `txn_${Date.now()}`;
-      
-      this.payments.set(paymentId, payment);
-      
-      return {
-        status: 'paid',
-        transactionId: payment.transactionId
-      };
-    } else {
-      payment.status = 'cancelled';
-      this.payments.set(paymentId, payment);
-      
-      return {
-        status: 'cancelled'
-      };
-    }
+    return mockResponse;
   }
 
-  // Simular cancelamento
-  cancelPayment(paymentId: string, reason?: string): { status: PaymentStatus } {
-    const payment = this.payments.get(paymentId);
-    if (!payment) {
-      throw new Error('Pagamento não encontrado');
-    }
+  /**
+   * Processa pagamento PIX
+   */
+  private async processPixPayment(request: PaymentRequest): Promise<PaymentResponse> {
+    // Simular geração de PIX
+    const pixCode = this.generatePixCode(request.amount, request.description);
+    const qrCode = this.generateQRCode(pixCode);
 
-    payment.status = 'cancelled';
-    payment.cancelledAt = new Date().toISOString();
-    payment.cancelReason = reason;
-    
-    this.payments.set(paymentId, payment);
+    const paymentLink: PaymentLink = {
+      id: `pix_${Date.now()}`,
+      appointmentId: 0, // Será definido pelo contexto
+      amount: request.amount,
+      description: request.description,
+      url: `https://payment.cliniflow.com/pix/${Date.now()}`,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      paymentMethod: 'pix',
+      pixCode,
+      qrCode
+    };
 
-    return { status: 'cancelled' };
-  }
-
-  // Simular estorno
-  refundPayment(paymentId: string, amount?: number): { status: PaymentStatus; refundId: string } {
-    const payment = this.payments.get(paymentId);
-    if (!payment) {
-      throw new Error('Pagamento não encontrado');
-    }
-
-    if (payment.status !== 'paid') {
-      throw new Error('Apenas pagamentos confirmados podem ser estornados');
-    }
-
-    payment.status = 'refunded';
-    payment.refundedAt = new Date().toISOString();
-    payment.refundAmount = amount || payment.amount;
-    payment.refundId = `ref_${Date.now()}`;
-    
-    this.payments.set(paymentId, payment);
+    // Simular delay da API
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     return {
-      status: 'refunded',
-      refundId: payment.refundId
+      id: paymentLink.id,
+      status: 'pending',
+      paymentLink
     };
   }
 
-  // Gerar código PIX simulado
-  private generatePixCode(amount: number): string {
-    const pixKey = '12345678901'; // Chave PIX simulada
-    const merchantName = 'PSICOLOGO LTDA';
-    const city = 'SAO PAULO';
-    
-    // Código PIX simplificado (formato real seria mais complexo)
-    return `00020126580014br.gov.bcb.pix0136${pixKey}5204000053039865405${amount.toFixed(2)}5802BR5913${merchantName}6008${city}62070503***6304`;
-  }
+  /**
+   * Processa pagamento via boleto
+   */
+  private async processBoletoPayment(request: PaymentRequest): Promise<PaymentResponse> {
+    // Simular geração de boleto
+    const boletoData = this.generateBoletoData(request);
 
-  // Gerar QR Code simulado (base64 de uma imagem simples)
-  private generateQRCode(paymentId: string): string {
-    // QR Code simulado em base64
-    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-  }
-
-  // Simular criação de confirmação
-  createBookingConfirmation(appointmentData: any): BookingConfirmation {
-    const confirmationId = `conf_${Date.now()}`;
-    const confirmationCode = `CF${Date.now().toString().slice(-6)}`;
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 dias
-
-    const confirmation: BookingConfirmation = {
-      id: confirmationId,
-      appointmentId: appointmentData.appointmentId,
-      confirmationCode,
-      patientName: appointmentData.patientName,
-      patientEmail: appointmentData.patientEmail,
-      patientPhone: appointmentData.patientPhone,
-      appointmentDate: appointmentData.appointmentDate,
-      appointmentTime: appointmentData.appointmentTime,
-      modality: appointmentData.modality,
-      price: appointmentData.price,
-      paymentStatus: 'pending',
-      instructions: appointmentData.instructions,
+    const paymentLink: PaymentLink = {
+      id: `boleto_${Date.now()}`,
+      appointmentId: 0, // Será definido pelo contexto
+      amount: request.amount,
+      description: request.description,
+      url: `https://payment.cliniflow.com/boleto/${Date.now()}`,
+      expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dias
+      status: 'active',
       createdAt: new Date().toISOString(),
-      expiresAt: expiresAt.toISOString()
+      paymentMethod: 'boleto',
+      boletoUrl: boletoData.url
     };
 
-    this.confirmations.set(confirmationId, confirmation);
-    return confirmation;
+    // Simular delay da API
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    return {
+      id: paymentLink.id,
+      status: 'pending',
+      paymentLink
+    };
   }
 
-  // Buscar confirmação por código
-  getConfirmationByCode(confirmationCode: string): BookingConfirmation | null {
-    for (const confirmation of this.confirmations.values()) {
-      if (confirmation.confirmationCode === confirmationCode) {
-        return confirmation;
-      }
-    }
-    return null;
-  }
-
-  // Simular envio de notificações
-  async sendNotification(type: 'email' | 'sms' | 'whatsapp', recipient: string, message: string): Promise<boolean> {
-    // Simular delay de envio
+  /**
+   * Verifica o status de um pagamento
+   */
+  async checkPaymentStatus(_paymentId: string): Promise<PaymentStatus> {
+    // Simular verificação de status
     await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Mock: 80% dos pagamentos são aprovados
+    const isApproved = Math.random() > 0.2;
+    return isApproved ? 'paid' : 'pending';
+  }
+
+  /**
+   * Processa um estorno
+   */
+  async processRefund(_request: RefundRequest): Promise<RefundResponse> {
+    try {
+      // Simular processamento de estorno
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const refundId = `refund_${Date.now()}`;
+      const estimatedDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(); // 5 dias
+
+      return {
+        id: refundId,
+        status: 'processing',
+        refundId,
+        estimatedDate
+      };
+    } catch (error) {
+      console.error('Erro ao processar estorno:', error);
+      throw new Error('Falha ao processar estorno');
+    }
+  }
+
+  /**
+   * Gera código PIX mockado
+   */
+  private generatePixCode(amount: number, _description: string): string {
+    const pixKey = 'cliniflow@pagamento.com';
+    const merchantName = 'CliniFlow';
+    const city = 'São Paulo';
+    const amountFormatted = amount.toFixed(2);
     
-    console.log(`[MOCK] Enviando ${type} para ${recipient}: ${message}`);
+    // Código PIX simplificado (em produção seria gerado pelo gateway)
+    return `00020126580014br.gov.bcb.pix0136${pixKey}520400005303986540${amountFormatted}5802BR5913${merchantName}6009${city}62070503***6304`;
+  }
+
+  /**
+   * Gera QR Code mockado
+   */
+  private generateQRCode(_pixCode: string): string {
+    // Em produção, seria gerado um QR Code real
+    return `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
+  }
+
+  /**
+   * Gera dados do boleto mockado
+   */
+  private generateBoletoData(request: PaymentRequest) {
+    const boletoId = `boleto_${Date.now()}`;
+    const dueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 dias
     
-    // Simular 95% de sucesso
-    return Math.random() > 0.05;
+    return {
+      id: boletoId,
+      amount: request.amount,
+      dueDate: dueDate.toISOString(),
+      barcode: '23791' + Math.random().toString().slice(2, 15) + Math.random().toString().slice(2, 15),
+      digitableLine: '23791' + Math.random().toString().slice(2, 5) + '.' + 
+                    Math.random().toString().slice(2, 8) + ' ' + 
+                    Math.random().toString().slice(2, 8) + '.' + 
+                    Math.random().toString().slice(2, 8) + ' ' + 
+                    Math.random().toString().slice(2, 8) + '.' + 
+                    Math.random().toString().slice(2, 8) + ' ' + 
+                    Math.random().toString().slice(2, 2) + ' ' + 
+                    Math.random().toString().slice(2, 14),
+      payerName: request.customerData.name,
+      payerDocument: request.customerData.document,
+      description: request.description,
+      url: `https://payment.cliniflow.com/boleto/${boletoId}`,
+      status: 'pending' as const
+    };
+  }
+
+  /**
+   * Configura webhooks para receber notificações dos gateways
+   */
+  async setupWebhooks(): Promise<void> {
+    // Em produção, configuraria webhooks reais
+    console.log('Webhooks configurados para:', {
+      stripe: this.config.stripe.webhookSecret,
+      pagseguro: this.config.pagseguro.email,
+      pix: this.config.pix.clientId
+    });
+  }
+
+  /**
+   * Processa notificação de webhook
+   */
+  async processWebhook(payload: any, _signature: string, gateway: 'stripe' | 'pagseguro' | 'pix'): Promise<void> {
+    try {
+      // Em produção, validaria a assinatura do webhook
+      console.log(`Webhook recebido do ${gateway}:`, payload);
+
+      // Processar notificação baseada no gateway
+      switch (gateway) {
+        case 'stripe':
+          await this.processStripeWebhook(payload);
+          break;
+        case 'pagseguro':
+          await this.processPagSeguroWebhook(payload);
+          break;
+        case 'pix':
+          await this.processPixWebhook(payload);
+          break;
+      }
+    } catch (error) {
+      console.error('Erro ao processar webhook:', error);
+      throw error;
+    }
+  }
+
+  private async processStripeWebhook(payload: any): Promise<void> {
+    // Processar webhook do Stripe
+    console.log('Processando webhook do Stripe:', payload.type);
+  }
+
+  private async processPagSeguroWebhook(payload: any): Promise<void> {
+    // Processar webhook do PagSeguro
+    console.log('Processando webhook do PagSeguro:', payload.notificationType);
+  }
+
+  private async processPixWebhook(payload: any): Promise<void> {
+    // Processar webhook do PIX
+    console.log('Processando webhook do PIX:', payload.evento);
+  }
+
+  /**
+   * Obtém configurações dos gateways
+   */
+  getGatewayConfig(): GatewayConfig {
+    return this.config;
+  }
+
+  /**
+   * Atualiza configurações dos gateways
+   */
+  updateGatewayConfig(newConfig: Partial<GatewayConfig>): void {
+    this.config = { ...this.config, ...newConfig };
   }
 }
 
-// Instâncias dos serviços
+// Instância singleton do serviço
 export const paymentService = new PaymentService();
-export const mockPaymentGateway = MockPaymentGateway.getInstance();
+
+// Exportar tipos para uso em outros módulos
+export type {
+  PaymentRequest,
+  PaymentResponse,
+  RefundRequest,
+  RefundResponse,
+  GatewayConfig
+};
