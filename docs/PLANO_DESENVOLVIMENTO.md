@@ -671,7 +671,7 @@ Requisitos:
 Use interfaces FinancialReport, MonthlyRevenue, Transaction com dados realistas.
 ```
 
-### 7.2 Gestão de Transações
+### 7.2 Gestão de Transações -- FEITO --
 
 **Prompt:**
 ```
