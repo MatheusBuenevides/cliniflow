@@ -10,3 +10,4 @@ export { default as Register } from './Register';
 export { default as PublicProfile } from './PublicProfile';
 export { default as OnlineBooking } from './OnlineBooking';
 export { default as BookingDemo } from './BookingDemo';
+export { TransactionManagement } from './TransactionManagement';

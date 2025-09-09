@@ -4,3 +4,8 @@ export { default as ExpenseBreakdown } from './ExpenseBreakdown';
 export { default as PaymentStatusPie } from './PaymentStatusPie';
 export { default as CashFlowChart } from './CashFlowChart';
 export { default as ConsultationPerformance } from './ConsultationPerformance';
+export { TransactionForm } from './TransactionForm';
+export { TransactionList } from './TransactionList';
+export { CategorySelector } from './CategorySelector';
+export { ReceiptUploader, FileViewer } from './ReceiptUploader';
+export { RecurrenceConfig } from './RecurrenceConfig';

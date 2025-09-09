@@ -295,7 +295,15 @@ export interface Transaction {
   paymentId?: string; // ID do gateway de pagamento
   status: TransactionStatus;
   receipt?: string; // URL do comprovante
+  receiptFile?: ReceiptFile; // Arquivo de comprovante
   notes?: string;
+  tags?: string[]; // Tags personalizáveis
+  recurrenceConfig?: RecurrenceConfig; // Configuração de recorrência
+  isRecurring: boolean; // Se é uma transação recorrente
+  parentTransactionId?: number; // ID da transação pai (para transações geradas por recorrência)
+  dueDate?: string; // Data de vencimento (para despesas)
+  isReconciled: boolean; // Se foi conciliada com extrato bancário
+  bankReconciliation?: BankReconciliation; // Dados de conciliação
   createdAt: string;
   updatedAt: string;
 }
@@ -726,6 +734,72 @@ export interface TransactionFilters {
   type?: TransactionType;
   category?: TransactionCategory;
   status?: TransactionStatus;
+  search?: string;
+  sortBy?: 'date' | 'amount' | 'description' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+// Tipos para categorias personalizáveis
+export interface TransactionCategoryConfig {
+  id: string;
+  name: string;
+  type: TransactionType;
+  color: string;
+  icon: string;
+  isDefault: boolean;
+  psychologistId: number;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Tipos para transações recorrentes
+export interface RecurrenceConfig {
+  id?: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number; // a cada X dias/semanas/meses/anos
+  endDate?: string; // data de fim da recorrência
+  maxOccurrences?: number; // máximo de ocorrências
+  daysOfWeek?: number[]; // para recorrência semanal (0-6, domingo=0)
+  dayOfMonth?: number; // para recorrência mensal (1-31)
+  isActive: boolean;
+}
+
+// Tipos para upload de comprovantes
+export interface ReceiptFile {
+  id: string;
+  fileName: string;
+  originalName: string;
+  fileType: string;
+  fileSize: number;
+  url: string;
+  uploadedAt: string;
+  isEncrypted: boolean;
+}
+
+// Tipos para conciliação bancária
+export interface BankReconciliation {
+  id: string;
+  transactionId: number;
+  bankStatementId: string;
+  bankAmount: number;
+  systemAmount: number;
+  difference: number;
+  reconciledAt: string;
+  reconciledBy: number;
+  notes?: string;
+}
+
+// Tipos para alertas de vencimento
+export interface PaymentDueAlert {
+  id: string;
+  transactionId: number;
+  dueDate: string;
+  amount: number;
+  description: string;
+  alertType: 'overdue' | 'due_soon' | 'recurring';
+  isRead: boolean;
+  createdAt: string;
 }
 
 // ===== COMPONENTES UI =====
