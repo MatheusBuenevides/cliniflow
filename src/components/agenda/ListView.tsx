@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Video, User, Filter, Search, Calendar } from 'lucide-react';
+import { Clock, MapPin, Video, User, Filter, Search, Calendar as CalendarIcon } from 'lucide-react';
 import type { Appointment, AvailableSlot } from '../../types';
 
 interface ListViewProps {
@@ -182,7 +182,7 @@ export const ListView: React.FC<ListViewProps> = ({
                 onClick={() => handleSort('date')}
                 className="flex items-center space-x-1 hover:text-purple-600 transition-colors"
               >
-                <Calendar className="h-4 w-4" />
+                <CalendarIcon className="h-4 w-4" />
                 <span>Data</span>
                 {sortBy === 'date' && (
                   <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -322,7 +322,7 @@ export const ListView: React.FC<ListViewProps> = ({
         {/* Estado vazio */}
         {filteredAndSortedAppointments.length === 0 && (
           <div className="text-center py-12">
-            <Calendar className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <CalendarIcon className="h-12 w-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-600 mb-2">
               Nenhum agendamento encontrado
             </h3>

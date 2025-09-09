@@ -6,113 +6,103 @@ import {
   Trash2, 
   MessageSquare, 
   CreditCard,
+  Play,
   Clock,
   AlertTriangle,
-  Info
+  MoreVertical,
+  Eye
 } from 'lucide-react';
-import type { Appointment } from '../../types';
+import type { Appointment, AppointmentStatus } from '../../types';
 
 interface AppointmentActionsProps {
   appointment: Appointment;
+  onEdit?: (appointment: Appointment) => void;
+  onDelete?: (appointment: Appointment) => void;
   onConfirm?: (appointment: Appointment) => void;
   onCancel?: (appointment: Appointment) => void;
   onComplete?: (appointment: Appointment) => void;
-  onEdit?: (appointment: Appointment) => void;
-  onDelete?: (appointment: Appointment) => void;
+  onView?: (appointment: Appointment) => void;
   onContact?: (appointment: Appointment) => void;
   onPayment?: (appointment: Appointment) => void;
-  onReschedule?: (appointment: Appointment) => void;
-  variant?: 'default' | 'compact' | 'minimal';
+  onStart?: (appointment: Appointment) => void;
+  onMarkNoShow?: (appointment: Appointment) => void;
+  variant?: 'dropdown' | 'buttons' | 'inline';
+  size?: 'sm' | 'md' | 'lg';
   showLabels?: boolean;
 }
 
 export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
   appointment,
+  onEdit,
+  onDelete,
   onConfirm,
   onCancel,
   onComplete,
-  onEdit,
-  onDelete,
+  onView,
   onContact,
   onPayment,
-  onReschedule,
-  variant = 'default',
+  onStart,
+  onMarkNoShow,
+  variant = 'dropdown',
+  size = 'md',
   showLabels = true
 }) => {
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [actionType, setActionType] = useState<string>('');
-
-  const handleAction = (action: () => void, type: string) => {
-    if (type === 'delete' || type === 'cancel') {
-      setActionType(type);
-      if (type === 'delete') {
-        setShowDeleteDialog(true);
-      } else {
-        setShowCancelDialog(true);
-      }
-    } else {
-      action();
-    }
-  };
-
-  const confirmAction = () => {
-    switch (actionType) {
-      case 'delete':
-        onDelete?.(appointment);
-        setShowDeleteDialog(false);
-        break;
-      case 'cancel':
-        onCancel?.(appointment);
-        setShowCancelDialog(false);
-        break;
-    }
-    setActionType('');
-  };
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const getAvailableActions = () => {
     const actions = [];
 
+    // Ação de visualizar sempre disponível
+    if (onView) {
+      actions.push({
+        key: 'view',
+        label: 'Ver detalhes',
+        icon: Eye,
+        color: 'text-blue-600',
+        onClick: () => onView(appointment)
+      });
+    }
+
+    // Ações baseadas no status
     switch (appointment.status) {
       case 'scheduled':
         if (onConfirm) {
           actions.push({
-            id: 'confirm',
+            key: 'confirm',
             label: 'Confirmar',
             icon: CheckCircle,
-            color: 'text-green-600 hover:bg-green-50',
-            action: () => onConfirm(appointment)
+            color: 'text-green-600',
+            onClick: () => onConfirm(appointment)
           });
         }
-        if (onCancel) {
+        if (onStart) {
           actions.push({
-            id: 'cancel',
-            label: 'Cancelar',
-            icon: XCircle,
-            color: 'text-red-600 hover:bg-red-50',
-            action: () => handleAction(() => onCancel(appointment), 'cancel')
+            key: 'start',
+            label: 'Iniciar sessão',
+            icon: Play,
+            color: 'text-blue-600',
+            onClick: () => onStart(appointment)
           });
         }
         break;
 
       case 'confirmed':
-        if (onComplete) {
+        if (onStart) {
           actions.push({
-            id: 'complete',
-            label: 'Finalizar',
-            icon: CheckCircle,
-            color: 'text-green-600 hover:bg-green-50',
-            action: () => onComplete(appointment)
+            key: 'start',
+            label: 'Iniciar sessão',
+            icon: Play,
+            color: 'text-blue-600',
+            onClick: () => onStart(appointment)
           });
         }
-        if (onCancel) {
+        if (onComplete) {
           actions.push({
-            id: 'cancel',
-            label: 'Cancelar',
-            icon: XCircle,
-            color: 'text-red-600 hover:bg-red-50',
-            action: () => handleAction(() => onCancel(appointment), 'cancel')
+            key: 'complete',
+            label: 'Finalizar',
+            icon: CheckCircle,
+            color: 'text-green-600',
+            onClick: () => onComplete(appointment)
           });
         }
         break;
@@ -120,68 +110,121 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
       case 'inProgress':
         if (onComplete) {
           actions.push({
-            id: 'complete',
+            key: 'complete',
             label: 'Finalizar',
             icon: CheckCircle,
-            color: 'text-green-600 hover:bg-green-50',
-            action: () => onComplete(appointment)
+            color: 'text-green-600',
+            onClick: () => onComplete(appointment)
           });
         }
         break;
+
+      case 'completed':
+        // Apenas ações de visualização e contato
+        break;
+
+      default:
+        break;
     }
 
-    // Ações sempre disponíveis
-    if (onEdit) {
+    // Ações de cancelamento (exceto para agendamentos já finalizados)
+    if (appointment.status !== 'completed' && appointment.status !== 'cancelled' && onCancel) {
       actions.push({
-        id: 'edit',
-        label: 'Editar',
-        icon: Edit,
-        color: 'text-blue-600 hover:bg-blue-50',
-        action: () => onEdit(appointment)
+        key: 'cancel',
+        label: 'Cancelar',
+        icon: XCircle,
+        color: 'text-red-600',
+        onClick: () => onCancel(appointment)
       });
     }
 
+    // Marcar como falta (apenas para agendamentos confirmados ou em andamento)
+    if ((appointment.status === 'confirmed' || appointment.status === 'inProgress') && onMarkNoShow) {
+      actions.push({
+        key: 'noShow',
+        label: 'Marcar como falta',
+        icon: AlertTriangle,
+        color: 'text-orange-600',
+        onClick: () => onMarkNoShow(appointment)
+      });
+    }
+
+    // Ações de contato
     if (onContact) {
       actions.push({
-        id: 'contact',
-        label: 'Contatar',
+        key: 'contact',
+        label: 'Contatar paciente',
         icon: MessageSquare,
-        color: 'text-green-600 hover:bg-green-50',
-        action: () => onContact(appointment)
+        color: 'text-green-600',
+        onClick: () => onContact(appointment)
       });
     }
 
+    // Ações de pagamento
     if (onPayment && appointment.paymentStatus === 'pending') {
       actions.push({
-        id: 'payment',
-        label: 'Pagamento',
+        key: 'payment',
+        label: 'Gerenciar pagamento',
         icon: CreditCard,
-        color: 'text-purple-600 hover:bg-purple-50',
-        action: () => onPayment(appointment)
+        color: 'text-purple-600',
+        onClick: () => onPayment(appointment)
       });
     }
 
-    if (onReschedule && appointment.status !== 'completed' && appointment.status !== 'cancelled') {
+    // Ações de edição (exceto para agendamentos finalizados)
+    if (appointment.status !== 'completed' && appointment.status !== 'cancelled' && onEdit) {
       actions.push({
-        id: 'reschedule',
-        label: 'Reagendar',
-        icon: Clock,
-        color: 'text-orange-600 hover:bg-orange-50',
-        action: () => onReschedule(appointment)
+        key: 'edit',
+        label: 'Editar',
+        icon: Edit,
+        color: 'text-blue-600',
+        onClick: () => onEdit(appointment)
       });
     }
 
-    if (onDelete) {
+    // Ações de exclusão (apenas para agendamentos cancelados ou com mais de 30 dias)
+    const appointmentDate = new Date(appointment.date);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    if ((appointment.status === 'cancelled' || appointmentDate < thirtyDaysAgo) && onDelete) {
       actions.push({
-        id: 'delete',
+        key: 'delete',
         label: 'Excluir',
         icon: Trash2,
-        color: 'text-red-600 hover:bg-red-50',
-        action: () => handleAction(() => onDelete(appointment), 'delete')
+        color: 'text-red-600',
+        onClick: () => onDelete(appointment)
       });
     }
 
     return actions;
+  };
+
+  const handleAction = (action: any) => {
+    action.onClick();
+    setShowDropdown(false);
+  };
+
+  const getSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'h-8 w-8 text-sm';
+      case 'lg':
+        return 'h-12 w-12 text-lg';
+      default:
+        return 'h-10 w-10 text-base';
+    }
+  };
+
+  const getButtonSizeClasses = () => {
+    switch (size) {
+      case 'sm':
+        return 'px-2 py-1 text-xs';
+      case 'lg':
+        return 'px-4 py-2 text-base';
+      default:
+        return 'px-3 py-1.5 text-sm';
+    }
   };
 
   const actions = getAvailableActions();
@@ -190,128 +233,124 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
     return null;
   }
 
-  const getVariantClasses = () => {
-    switch (variant) {
-      case 'compact': return 'space-x-1';
-      case 'minimal': return 'space-x-0.5';
-      default: return 'space-x-2';
-    }
-  };
-
-  const getButtonSize = () => {
-    switch (variant) {
-      case 'compact': return 'p-1.5';
-      case 'minimal': return 'p-1';
-      default: return 'p-2';
-    }
-  };
-
-  const getIconSize = () => {
-    switch (variant) {
-      case 'compact': return 'h-3 w-3';
-      case 'minimal': return 'h-3 w-3';
-      default: return 'h-4 w-4';
-    }
-  };
-
-  const getTextSize = () => {
-    switch (variant) {
-      case 'compact': return 'text-xs';
-      case 'minimal': return 'text-xs';
-      default: return 'text-sm';
-    }
-  };
-
-  return (
-    <>
-      <div className={`flex items-center ${getVariantClasses()}`}>
+  if (variant === 'buttons') {
+    return (
+      <div className="flex flex-wrap gap-2">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
             <button
-              key={action.id}
-              onClick={action.action}
-              className={`flex items-center space-x-1 rounded-md transition-colors ${getButtonSize()} ${action.color}`}
+              key={action.key}
+              onClick={action.onClick}
+              className={`
+                flex items-center space-x-1 rounded-md border border-slate-300 
+                bg-white hover:bg-slate-50 transition-colors
+                ${getButtonSizeClasses()}
+                ${action.color}
+              `}
               title={action.label}
             >
-              <Icon className={getIconSize()} />
-              {showLabels && variant !== 'minimal' && (
-                <span className={getTextSize()}>{action.label}</span>
-              )}
+              <Icon className="h-4 w-4" />
+              {showLabels && <span>{action.label}</span>}
             </button>
           );
         })}
       </div>
+    );
+  }
 
-      {/* Dialog de Confirmação de Cancelamento */}
-      {showCancelDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <AlertTriangle className="h-6 w-6 text-yellow-600" />
-              <h3 className="text-lg font-semibold text-slate-800">
-                Cancelar Agendamento
-              </h3>
-            </div>
-            
-            <p className="text-slate-600 mb-6">
-              Tem certeza que deseja cancelar o agendamento de{' '}
-              <strong>{appointment.patient.name}</strong> para{' '}
-              <strong>{appointment.date}</strong> às{' '}
-              <strong>{appointment.time}</strong>?
-            </p>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowCancelDialog(false)}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Não, manter
-              </button>
-              <button
-                onClick={confirmAction}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Sim, cancelar
-              </button>
-            </div>
+  if (variant === 'inline') {
+    return (
+      <div className="flex items-center space-x-1">
+        {actions.slice(0, 3).map((action) => {
+          const Icon = action.icon;
+          return (
+            <button
+              key={action.key}
+              onClick={action.onClick}
+              className={`
+                p-1 rounded hover:bg-slate-100 transition-colors
+                ${action.color}
+              `}
+              title={action.label}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          );
+        })}
+        {actions.length > 3 && (
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="p-1 rounded hover:bg-slate-100 transition-colors text-slate-500"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+            {showDropdown && (
+              <div className="absolute right-0 top-8 z-10 bg-white border border-slate-200 rounded-md shadow-lg py-1 min-w-[140px]">
+                {actions.slice(3).map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <button
+                      key={action.key}
+                      onClick={() => handleAction(action)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
+                    >
+                      <Icon className="h-3 w-3" />
+                      <span>{action.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    );
+  }
 
-      {/* Dialog de Confirmação de Exclusão */}
-      {showDeleteDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
-              <h3 className="text-lg font-semibold text-slate-800">
-                Excluir Agendamento
-              </h3>
-            </div>
-            
-            <p className="text-slate-600 mb-6">
-              <strong>Atenção:</strong> Esta ação não pode ser desfeita. O agendamento de{' '}
-              <strong>{appointment.patient.name}</strong> será permanentemente removido.
-            </p>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteDialog(false)}
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmAction}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Sim, excluir
-              </button>
-            </div>
+  // Variant dropdown (padrão)
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setShowDropdown(!showDropdown)}
+        className={`
+          flex items-center justify-center rounded-md border border-slate-300 
+          bg-white hover:bg-slate-50 transition-colors
+          ${getSizeClasses()}
+        `}
+      >
+        <MoreVertical className="h-4 w-4 text-slate-500" />
+      </button>
+
+      {showDropdown && (
+        <>
+          {/* Overlay para fechar o dropdown */}
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setShowDropdown(false)}
+          />
+          
+          {/* Dropdown menu */}
+          <div className="absolute right-0 top-10 z-20 bg-white border border-slate-200 rounded-md shadow-lg py-1 min-w-[160px]">
+            {actions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.key}
+                  onClick={() => handleAction(action)}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
+                >
+                  <Icon className={`h-3 w-3 ${action.color}`} />
+                  <span>{action.label}</span>
+                </button>
+              );
+            })}
           </div>
-        </div>
+        </>
       )}
-    </>
+    </div>
   );
 };
+
+export default AppointmentActions;

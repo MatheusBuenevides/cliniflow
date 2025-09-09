@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, Video } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Video } from 'lucide-react';
 import type { CalendarDay, TimeSlot } from '../../types/booking';
 import type { SessionModality } from '../../types';
 
@@ -181,7 +181,7 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
       {/* Header do Calendário */}
       <div className="flex items-center justify-between p-6 border-b border-slate-200">
         <div className="flex items-center space-x-3">
-          <Calendar className="h-6 w-6 text-purple-600" />
+          <CalendarIcon className="h-6 w-6 text-purple-600" />
           <h2 className="text-xl font-semibold text-slate-800">Selecione uma data</h2>
         </div>
         <div className="flex items-center space-x-2">

@@ -449,7 +449,7 @@ Use interfaces SessionRecord, SessionTag, SessionAttachment e implemente criptog
 
 ---
 
-## 📅 MÓDULO 5: SISTEMA DE AGENDA AVANÇADO
+## 📅 MÓDULO 5: SISTEMA DE AGENDA AVANÇADO -- FEITO -- 
 
 ### 5.1 Calendário Interativo Profissional -- FEITO --
 
@@ -494,7 +494,7 @@ Requisitos:
 Use interfaces Appointment, WorkingHours, CalendarProps e mantenha performance otimizada.
 ```
 
-### 5.2 Gestão de Agendamentos
+### 5.2 Gestão de Agendamentos -- FEITO --
 
 **Prompt:**
 ```

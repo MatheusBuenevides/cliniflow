@@ -23,10 +23,11 @@ export { AppointmentCard } from './AppointmentCard';
 export { AppointmentActions } from './AppointmentActions';
 export { AppointmentFormAdvanced } from './AppointmentFormAdvanced';
 export { CancellationModal } from './CancellationModal';
+export { StatusBadge } from './StatusBadge';
+export { AppointmentReports } from './AppointmentReports';
 
 // Re-exportar tipos relacionados
 export type {
-  TimeSlot,
   CalendarDay,
   BookingStep,
   BookingState,

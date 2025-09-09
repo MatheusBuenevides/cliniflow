@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, BarChart3 } from 'lucide-react';
 import { useAppointmentStore } from '../stores/useAppointmentStore';
 import { 
   AppointmentForm, 
   Calendar, 
   AppointmentFormAdvanced,
   CancellationModal,
-  AppointmentCard
+  AppointmentCard,
+  AppointmentReports
 } from '../components/agenda';
 import type { Appointment } from '../types';
 
@@ -14,6 +15,7 @@ const Agenda: React.FC = () => {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [showReports, setShowReports] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const { 
     appointments, 
@@ -204,6 +206,36 @@ const Agenda: React.FC = () => {
     );
   }
 
+  if (showReports) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-8">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="mb-6">
+            <button
+              onClick={() => setShowReports(false)}
+              className="flex items-center space-x-2 text-slate-600 hover:text-slate-800 transition-colors mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar para Agenda</span>
+            </button>
+            <h1 className="text-3xl font-bold text-slate-800">Relatórios da Agenda</h1>
+            <p className="text-slate-600 mt-2">
+              Análise de produtividade e performance dos agendamentos
+            </p>
+          </div>
+
+          <AppointmentReports
+            appointments={appointments}
+            onExport={(format) => {
+              console.log(`Exportando relatórios em formato ${format}`);
+              // Implementar exportação
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header da Agenda */}
@@ -214,13 +246,22 @@ const Agenda: React.FC = () => {
             Gerencie seus agendamentos e visualize sua agenda de forma intuitiva
           </p>
         </div>
-        <button
-          onClick={() => setShowBookingForm(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Novo Agendamento</span>
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowReports(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Relatórios</span>
+          </button>
+          <button
+            onClick={() => setShowBookingForm(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Novo Agendamento</span>
+          </button>
+        </div>
       </div>
 
       {/* Calendário Avançado */}

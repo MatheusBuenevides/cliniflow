@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Clock, 
   MapPin, 
@@ -6,17 +6,11 @@ import {
   User, 
   Phone, 
   Mail, 
-  Calendar,
-  MoreVertical,
-  Edit,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Eye,
-  MessageSquare,
-  CreditCard
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import type { Appointment } from '../../types';
+import { StatusBadge } from './StatusBadge';
+import { AppointmentActions } from './AppointmentActions';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -47,51 +41,8 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   onPayment,
   onClick
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-100 border-green-300 text-green-800';
-      case 'confirmed': return 'bg-blue-100 border-blue-300 text-blue-800';
-      case 'scheduled': return 'bg-purple-100 border-purple-300 text-purple-800';
-      case 'cancelled': return 'bg-red-100 border-red-300 text-red-800';
-      case 'inProgress': return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      default: return 'bg-slate-100 border-slate-300 text-slate-800';
-    }
-  };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Realizada';
-      case 'confirmed': return 'Confirmada';
-      case 'scheduled': return 'Agendada';
-      case 'cancelled': return 'Cancelada';
-      case 'inProgress': return 'Em andamento';
-      default: return status;
-    }
-  };
-
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'text-green-600';
-      case 'pending': return 'text-yellow-600';
-      case 'cancelled': return 'text-red-600';
-      default: return 'text-slate-600';
-    }
-  };
-
-  const getPaymentStatusText = (status: string) => {
-    switch (status) {
-      case 'paid': return 'Pago';
-      case 'pending': return 'Pendente';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
-    }
-  };
-
-  const getModalityIcon = (modality: string) => {
-    return modality === 'online' ? Video : MapPin;
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -107,10 +58,6 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
     return time;
   };
 
-  const handleAction = (action: () => void) => {
-    action();
-    setShowMenu(false);
-  };
 
   const getVariantClasses = () => {
     switch (variant) {
@@ -133,7 +80,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
   if (variant === 'minimal') {
     return (
       <div
-        className={`flex items-center space-x-3 p-2 rounded-lg border cursor-pointer hover:shadow-sm transition-all duration-200 ${getStatusColor(appointment.status)}`}
+        className="flex items-center space-x-3 p-2 rounded-lg border cursor-pointer hover:shadow-sm transition-all duration-200 bg-slate-100"
         onClick={() => onClick?.(appointment)}
       >
         <Clock className="h-4 w-4 flex-shrink-0" />
@@ -160,7 +107,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
         <div className="flex-1 min-w-0">
           {/* Data e Horário */}
           <div className="flex items-center space-x-2 mb-1">
-            <Calendar className="h-4 w-4 text-slate-500" />
+            <CalendarIcon className="h-4 w-4 text-slate-500" />
             <span className={`font-medium text-slate-800 ${getTextSize()}`}>
               {formatDate(appointment.date)}
             </span>
@@ -171,108 +118,26 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
             <span className={`font-semibold text-slate-800 ${getTextSize()}`}>
               {formatTime(appointment.time)}
             </span>
-            <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(appointment.status)}`}>
-              {getStatusText(appointment.status)}
-            </span>
+            <StatusBadge status={appointment.status} size="sm" />
           </div>
         </div>
 
         {/* Menu de Ações */}
         {showActions && (
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="p-1 rounded hover:bg-slate-100 transition-colors"
-            >
-              <MoreVertical className="h-4 w-4 text-slate-500" />
-            </button>
-
-            {showMenu && (
-              <div className="absolute right-0 top-6 z-10 bg-white border border-slate-200 rounded-md shadow-lg py-1 min-w-[140px]">
-                {onView && (
-                  <button
-                    onClick={() => handleAction(() => onView(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <Eye className="h-3 w-3 text-blue-600" />
-                    <span>Ver detalhes</span>
-                  </button>
-                )}
-                
-                {appointment.status === 'scheduled' && onConfirm && (
-                  <button
-                    onClick={() => handleAction(() => onConfirm(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <CheckCircle className="h-3 w-3 text-green-600" />
-                    <span>Confirmar</span>
-                  </button>
-                )}
-                
-                {appointment.status === 'confirmed' && onComplete && (
-                  <button
-                    onClick={() => handleAction(() => onComplete(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <CheckCircle className="h-3 w-3 text-green-600" />
-                    <span>Finalizar</span>
-                  </button>
-                )}
-                
-                {appointment.status !== 'completed' && appointment.status !== 'cancelled' && onCancel && (
-                  <button
-                    onClick={() => handleAction(() => onCancel(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <XCircle className="h-3 w-3 text-red-600" />
-                    <span>Cancelar</span>
-                  </button>
-                )}
-                
-                {onEdit && (
-                  <button
-                    onClick={() => handleAction(() => onEdit(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <Edit className="h-3 w-3 text-blue-600" />
-                    <span>Editar</span>
-                  </button>
-                )}
-                
-                {onContact && (
-                  <button
-                    onClick={() => handleAction(() => onContact(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <MessageSquare className="h-3 w-3 text-green-600" />
-                    <span>Contatar</span>
-                  </button>
-                )}
-                
-                {onPayment && appointment.paymentStatus === 'pending' && (
-                  <button
-                    onClick={() => handleAction(() => onPayment(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2"
-                  >
-                    <CreditCard className="h-3 w-3 text-purple-600" />
-                    <span>Pagamento</span>
-                  </button>
-                )}
-                
-                {onDelete && (
-                  <button
-                    onClick={() => handleAction(() => onDelete(appointment))}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center space-x-2 text-red-600"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    <span>Excluir</span>
-                  </button>
-                )}
-              </div>
-            )}
+          <div onClick={(e) => e.stopPropagation()}>
+            <AppointmentActions
+              appointment={appointment}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onConfirm={onConfirm}
+              onCancel={onCancel}
+              onComplete={onComplete}
+              onView={onView}
+              onContact={onContact}
+              onPayment={onPayment}
+              variant="dropdown"
+              size="md"
+            />
           </div>
         )}
       </div>
@@ -305,7 +170,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-1">
-            {getModalityIcon(appointment.modality)}
+            {appointment.modality === 'online' ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
             <span className={`text-slate-600 ${getTextSize()}`}>
               {appointment.modality === 'online' ? 'Online' : 'Presencial'}
             </span>
@@ -323,9 +188,7 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
           <div className={`font-semibold text-slate-800 ${getTextSize()}`}>
             R$ {appointment.price}
           </div>
-          <div className={`text-xs ${getPaymentStatusColor(appointment.paymentStatus)}`}>
-            {getPaymentStatusText(appointment.paymentStatus)}
-          </div>
+          <StatusBadge status={appointment.paymentStatus} type="payment" size="sm" />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, List, Grid, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List, Grid, Clock } from 'lucide-react';
 import { useAppointmentStore } from '../../stores/useAppointmentStore';
 import type { Appointment, CalendarProps } from '../../types';
 import { DayView } from './DayView';
@@ -94,7 +94,7 @@ const ViewSelector = memo<{
 }>(({ currentView, onViewChange }) => {
   const views = [
     { id: 'day', label: 'Dia', icon: Clock },
-    { id: 'week', label: 'Semana', icon: Calendar },
+    { id: 'week', label: 'Semana', icon: CalendarIcon },
     { id: 'month', label: 'Mês', icon: Grid },
     { id: 'list', label: 'Lista', icon: List }
   ] as const;

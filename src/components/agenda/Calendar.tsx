@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, List, Grid, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List, Grid, Clock } from 'lucide-react';
 import { useAppointmentStore } from '../../stores/useAppointmentStore';
 import type { Appointment, CalendarProps } from '../../types';
 import { DayView } from './DayView';
@@ -186,7 +186,7 @@ export const Calendar: React.FC<CalendarProps> = ({
                 : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
             }`}
           >
-            <Calendar className="h-4 w-4" />
+            <CalendarIcon className="h-4 w-4" />
             <span>Semana</span>
           </button>
           
