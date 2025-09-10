@@ -5,5 +5,6 @@ export { financialService } from './financialService';
 export { paymentService } from './paymentService';
 export { auditService } from './auditService';
 export { notificationService } from './notificationService';
+export { communicationService } from './communicationService';
 export { sessionService } from './sessionService';
 export { mockData } from './mockData';

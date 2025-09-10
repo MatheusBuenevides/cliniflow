@@ -5,6 +5,7 @@ export { default as PatientDetail } from './PatientDetail';
 export { default as Financials } from './Financials';
 export { default as Telepsicologia } from './Telepsicologia';
 export { default as Settings } from './Settings';
+export { default as CommunicationSettings } from './CommunicationSettings';
 export { default as Login } from './Login';
 export { default as Register } from './Register';
 export { default as PublicProfile } from './PublicProfile';

@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { communicationService } from './communicationService';
 import type { 
   NotificationTemplate, 
   BookingConfirmation, 
@@ -338,6 +339,169 @@ Nos vemos em breve! 😊`;
   // Cancelar notificação agendada
   async cancelScheduledNotification(notificationId: string) {
     return apiClient.delete(`/notifications/schedule/${notificationId}`);
+  }
+
+  // ===== INTEGRAÇÃO COM SISTEMA DE COMUNICAÇÃO =====
+
+  // Enviar confirmação de agendamento usando novo sistema
+  async sendBookingConfirmationAdvanced(confirmation: BookingConfirmation, channels: {
+    email?: boolean;
+    sms?: boolean;
+    whatsapp?: boolean;
+  }) {
+    const promises: Promise<any>[] = [];
+
+    if (channels.email) {
+      promises.push(
+        communicationService.sendMessage({
+          type: 'email',
+          recipient: {
+            name: confirmation.patientName,
+            email: confirmation.patientEmail
+          },
+          subject: 'Confirmação de Agendamento - CliniFlow',
+          content: this.buildBookingConfirmationEmailContent(confirmation),
+          templateId: 'booking_confirmation'
+        })
+      );
+    }
+
+    if (channels.sms) {
+      promises.push(
+        communicationService.sendMessage({
+          type: 'sms',
+          recipient: {
+            name: confirmation.patientName,
+            phone: confirmation.patientPhone
+          },
+          content: this.buildBookingConfirmationSMSMessage(confirmation)
+        })
+      );
+    }
+
+    if (channels.whatsapp) {
+      promises.push(
+        communicationService.sendMessage({
+          type: 'whatsapp',
+          recipient: {
+            name: confirmation.patientName,
+            phone: confirmation.patientPhone
+          },
+          content: this.buildBookingConfirmationWhatsAppMessage(confirmation)
+        })
+      );
+    }
+
+    return Promise.all(promises);
+  }
+
+  // Agendar lembrete de consulta usando novo sistema
+  async scheduleAppointmentReminderAdvanced(appointment: Appointment, config: {
+    emailReminder: boolean;
+    smsReminder: boolean;
+    whatsappReminder: boolean;
+    reminderHours: number[];
+  }) {
+    const promises: Promise<any>[] = [];
+
+    config.reminderHours.forEach(hours => {
+      const reminderTime = new Date(appointment.date + 'T' + appointment.time);
+      reminderTime.setHours(reminderTime.getHours() - hours);
+
+      if (config.emailReminder) {
+        promises.push(
+          communicationService.scheduleMessage({
+            type: 'email',
+            recipient: {
+              name: appointment.patient.name,
+              email: appointment.patient.email
+            },
+            subject: 'Lembrete de Consulta - CliniFlow',
+            content: this.buildAppointmentReminderEmailContent(appointment),
+            scheduledFor: reminderTime.toISOString(),
+            trigger: {
+              type: 'appointment_reminder',
+              appointmentId: appointment.id,
+              hoursBefore: hours
+            }
+          })
+        );
+      }
+
+      if (config.smsReminder) {
+        promises.push(
+          communicationService.scheduleMessage({
+            type: 'sms',
+            recipient: {
+              name: appointment.patient.name,
+              phone: appointment.patient.phone
+            },
+            content: this.buildAppointmentReminderSMSMessage(appointment),
+            scheduledFor: reminderTime.toISOString(),
+            trigger: {
+              type: 'appointment_reminder',
+              appointmentId: appointment.id,
+              hoursBefore: hours
+            }
+          })
+        );
+      }
+
+      if (config.whatsappReminder) {
+        promises.push(
+          communicationService.scheduleMessage({
+            type: 'whatsapp',
+            recipient: {
+              name: appointment.patient.name,
+              phone: appointment.patient.phone
+            },
+            content: this.buildAppointmentReminderWhatsAppMessage(appointment),
+            scheduledFor: reminderTime.toISOString(),
+            trigger: {
+              type: 'appointment_reminder',
+              appointmentId: appointment.id,
+              hoursBefore: hours
+            }
+          })
+        );
+      }
+    });
+
+    return Promise.all(promises);
+  }
+
+  // Métodos auxiliares para construir conteúdo
+  private buildBookingConfirmationEmailContent(confirmation: BookingConfirmation): string {
+    return `
+      <h2>Olá ${confirmation.patientName}!</h2>
+      <p>Seu agendamento foi confirmado com sucesso.</p>
+      <p><strong>Data:</strong> ${new Date(confirmation.appointmentDate).toLocaleDateString('pt-BR')}</p>
+      <p><strong>Horário:</strong> ${confirmation.appointmentTime}</p>
+      <p><strong>Modalidade:</strong> ${confirmation.modality === 'online' ? 'Online' : 'Presencial'}</p>
+      <p><strong>Código de confirmação:</strong> ${confirmation.confirmationCode}</p>
+      <p><strong>Valor:</strong> ${new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(confirmation.price)}</p>
+      <p>Para dúvidas, entre em contato: ${confirmation.instructions.contactInfo.phone} ou ${confirmation.instructions.contactInfo.email}</p>
+    `;
+  }
+
+  private buildAppointmentReminderEmailContent(appointment: Appointment): string {
+    return `
+      <h2>Lembrete de Consulta</h2>
+      <p>Olá ${appointment.patient.name}!</p>
+      <p>Você tem uma consulta agendada para:</p>
+      <p><strong>Data:</strong> ${new Date(appointment.date).toLocaleDateString('pt-BR')}</p>
+      <p><strong>Horário:</strong> ${appointment.time}</p>
+      <p><strong>Modalidade:</strong> ${appointment.modality === 'online' ? 'Online' : 'Presencial'}</p>
+      <p><strong>Duração:</strong> ${appointment.duration} minutos</p>
+      ${appointment.videoRoomId ? `<p><strong>Link da videoconferência:</strong> <a href="https://meet.cliniflow.com/${appointment.videoRoomId}">Entrar na consulta</a></p>` : ''}
+    `;
+  }
+
+  private buildAppointmentReminderSMSMessage(appointment: Appointment): string {
+    return `Lembrete: Consulta agendada para ${new Date(appointment.date).toLocaleDateString('pt-BR')} às ${appointment.time}. ${appointment.videoRoomId ? `Link: https://meet.cliniflow.com/${appointment.videoRoomId}` : ''} - CliniFlow`;
   }
 }
 

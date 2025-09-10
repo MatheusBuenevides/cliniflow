@@ -802,7 +802,7 @@ Requisitos:
 Use interface Notification e NotificationType.
 ```
 
-### 8.2 Comunicação Externa (Email/SMS)
+### 8.2 Comunicação Externa (Email/SMS) -- FEITO --  
 
 **Prompt:**
 ```
