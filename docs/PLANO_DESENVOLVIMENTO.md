@@ -626,7 +626,7 @@ Implemente conforme resoluções do CFP para telepsicologia.
 
 ---
 
-## 💰 MÓDULO 7: SISTEMA FINANCEIRO COMPLETO
+## 💰 MÓDULO 7: SISTEMA FINANCEIRO COMPLETO -- FEITO --
 
 ### 7.1 Dashboard e Relatórios Financeiros -- FEITO --
 
@@ -759,7 +759,7 @@ Simule integração inicialmente e prepare para APIs reais dos gateways.
 
 ## 🔔 MÓDULO 8: SISTEMA DE NOTIFICAÇÕES
 
-### 8.1 Notificações In-App
+### 8.1 Notificações In-App -- FEITO --
 
 **Prompt:**
 ```

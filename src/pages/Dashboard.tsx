@@ -1,11 +1,18 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Calendar, Users, DollarSign, Clock } from 'lucide-react';
+import { Calendar, Users, DollarSign, Clock, Bell, CreditCard, AlertTriangle } from 'lucide-react';
 import { InfoCard } from '../components/ui';
 import { mockData } from '../services/mockData';
+import { useNotifications } from '../stores/useNotificationStore';
 
 const Dashboard: React.FC = () => {
   const nextAppointment = mockData.todayAppointments[0];
+  const { 
+    simulateAppointmentReminder, 
+    simulatePaymentReceived, 
+    simulateSystemUpdate,
+    unreadCount 
+  } = useNotifications();
   
   return (
     <div>
@@ -77,6 +84,58 @@ const Dashboard: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Seção de Demonstração de Notificações */}
+      <div className="mt-8 bg-white p-6 rounded-2xl shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-slate-800 flex items-center">
+            <Bell className="mr-2 text-purple-600" size={24} />
+            Sistema de Notificações
+          </h2>
+          <span className="text-sm text-gray-500">
+            {unreadCount} não lidas
+          </span>
+        </div>
+        
+        <p className="text-gray-600 mb-4">
+          Teste o sistema de notificações clicando nos botões abaixo. As notificações aparecerão no ícone do sino no header.
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button
+            onClick={() => simulateAppointmentReminder(1, 'Maria Silva', '14:30')}
+            className="flex items-center space-x-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 border border-blue-200"
+          >
+            <Calendar className="text-blue-600" size={20} />
+            <div className="text-left">
+              <div className="font-semibold text-blue-800">Lembrete de Consulta</div>
+              <div className="text-sm text-blue-600">Simular lembrete</div>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => simulatePaymentReceived(180, 'João Santos')}
+            className="flex items-center space-x-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 border border-green-200"
+          >
+            <CreditCard className="text-green-600" size={20} />
+            <div className="text-left">
+              <div className="font-semibold text-green-800">Pagamento Recebido</div>
+              <div className="text-sm text-green-600">Simular pagamento</div>
+            </div>
+          </button>
+          
+          <button
+            onClick={() => simulateSystemUpdate('Nova funcionalidade: Relatórios financeiros aprimorados disponível')}
+            className="flex items-center space-x-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 border border-purple-200"
+          >
+            <AlertTriangle className="text-purple-600" size={20} />
+            <div className="text-left">
+              <div className="font-semibold text-purple-800">Atualização do Sistema</div>
+              <div className="text-sm text-purple-600">Simular atualização</div>
+            </div>
+          </button>
         </div>
       </div>
     </div>

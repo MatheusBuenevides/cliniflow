@@ -5,6 +5,7 @@ export { useAppointmentStore } from './useAppointmentStore';
 export { useFinancialStore } from './useFinancialStore';
 export { useVideoStore } from './useVideoStore';
 export { useSessionStore } from './useSessionStore';
+export { useNotificationStore, useNotifications } from './useNotificationStore';
 
 // Manter compatibilidade com o store antigo (será removido futuramente)
 export { AppProvider, useAppStore } from './AppStore';
