@@ -3,3 +3,7 @@ export { default as WorkingHoursConfig } from './WorkingHoursConfig';
 export { default as PriceConfiguration } from './PriceConfiguration';
 export { default as SpecialtySelector } from './SpecialtySelector';
 export { default as PhotoUploader } from './PhotoUploader';
+export { default as NotificationPreferences } from './NotificationPreferences';
+export { default as AppointmentSettings } from './AppointmentSettings';
+export { default as PaymentSettings } from './PaymentSettings';
+export { default as PrivacySettings } from './PrivacySettings';

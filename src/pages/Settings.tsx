@@ -13,10 +13,14 @@ import {
 import { 
   ProfileForm, 
   WorkingHoursConfig, 
-  PriceConfiguration 
+  PriceConfiguration,
+  NotificationPreferences,
+  AppointmentSettings as AppointmentSettingsComponent,
+  PaymentSettings as PaymentSettingsComponent,
+  PrivacySettings as PrivacySettingsComponent
 } from '../components/settings';
 import { useSettingsStore } from '../stores/useSettingsStore';
-import type { Psychologist, WorkingHours, SessionPrices } from '../types';
+import type { Psychologist, WorkingHours, SessionPrices, NotificationSettings, AppointmentSettings, PaymentSettings, PrivacySettings } from '../types';
 
 type SettingsTab = 'profile' | 'schedule' | 'pricing' | 'notifications' | 'appointments' | 'payments' | 'privacy';
 
@@ -29,6 +33,10 @@ const Settings: React.FC = () => {
     updateProfile,
     updateWorkingHours,
     updateSessionPrices,
+    updateNotificationSettings,
+    updateAppointmentSettings,
+    updatePaymentSettings,
+    updatePrivacySettings,
     isLoading,
     error
   } = useSettingsStore();
@@ -55,6 +63,26 @@ const Settings: React.FC = () => {
 
   const handlePricesChange = (prices: SessionPrices) => {
     updateSessionPrices(prices);
+    setHasUnsavedChanges(false);
+  };
+
+  const handleNotificationSettingsChange = (notificationSettings: NotificationSettings) => {
+    updateNotificationSettings(notificationSettings);
+    setHasUnsavedChanges(false);
+  };
+
+  const handleAppointmentSettingsChange = (appointmentSettings: AppointmentSettings) => {
+    updateAppointmentSettings(appointmentSettings);
+    setHasUnsavedChanges(false);
+  };
+
+  const handlePaymentSettingsChange = (paymentSettings: PaymentSettings) => {
+    updatePaymentSettings(paymentSettings);
+    setHasUnsavedChanges(false);
+  };
+
+  const handlePrivacySettingsChange = (privacySettings: PrivacySettings) => {
+    updatePrivacySettings(privacySettings);
     setHasUnsavedChanges(false);
   };
 
@@ -86,70 +114,34 @@ const Settings: React.FC = () => {
       
       case 'notifications':
         return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Configurações de Notificações
-              </h3>
-              <p className="text-sm text-slate-600">
-                Configure como e quando você deseja receber notificações.
-              </p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
-              <p className="text-slate-500">Configurações de notificações em desenvolvimento...</p>
-            </div>
-          </div>
+          <NotificationPreferences
+            settings={settings.notifications}
+            onSettingsChange={handleNotificationSettingsChange}
+          />
         );
       
       case 'appointments':
         return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Configurações de Agendamento
-              </h3>
-              <p className="text-sm text-slate-600">
-                Configure as regras e políticas para agendamentos.
-              </p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
-              <p className="text-slate-500">Configurações de agendamento em desenvolvimento...</p>
-            </div>
-          </div>
+          <AppointmentSettingsComponent
+            settings={settings.appointment}
+            onSettingsChange={handleAppointmentSettingsChange}
+          />
         );
       
       case 'payments':
         return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Configurações de Pagamento
-              </h3>
-              <p className="text-sm text-slate-600">
-                Configure gateways de pagamento e métodos aceitos.
-              </p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
-              <p className="text-slate-500">Configurações de pagamento em desenvolvimento...</p>
-            </div>
-          </div>
+          <PaymentSettingsComponent
+            settings={settings.payment}
+            onSettingsChange={handlePaymentSettingsChange}
+          />
         );
       
       case 'privacy':
         return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                Configurações de Privacidade
-              </h3>
-              <p className="text-sm text-slate-600">
-                Gerencie a privacidade e segurança dos dados.
-              </p>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
-              <p className="text-slate-500">Configurações de privacidade em desenvolvimento...</p>
-            </div>
-          </div>
+          <PrivacySettingsComponent
+            settings={settings.privacy}
+            onSettingsChange={handlePrivacySettingsChange}
+          />
         );
       
       default:
