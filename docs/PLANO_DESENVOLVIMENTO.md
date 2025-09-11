@@ -757,7 +757,7 @@ Simule integração inicialmente e prepare para APIs reais dos gateways.
 
 ---
 
-## 🔔 MÓDULO 8: SISTEMA DE NOTIFICAÇÕES
+## 🔔 MÓDULO 8: SISTEMA DE NOTIFICAÇÕES -- FEITO -- 
 
 ### 8.1 Notificações In-App -- FEITO --
 
