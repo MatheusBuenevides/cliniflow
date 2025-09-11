@@ -889,7 +889,7 @@ Requisitos:
 Use interfaces SystemSettings, WorkingHours, SessionPrices.
 ```
 
-### 9.2 Preferências do Sistema
+### 9.2 Preferências do Sistema -- FEITO --
 
 **Prompt:**
 ```
