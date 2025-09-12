@@ -934,7 +934,7 @@ Use interfaces NotificationSettings, PrivacySettings, PaymentSettings.
 
 ## 🛠️ MÓDULO 10: BACKEND API (Node.js)
 
-### 10.1 Estrutura Base do Servidor
+### 10.1 Estrutura Base do Servidor -- FEITO -- 
 
 **Prompt:**
 ```

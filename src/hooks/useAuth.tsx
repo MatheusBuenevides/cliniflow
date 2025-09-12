@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(true);
       
       // Verificar se existe token no localStorage
-      const token = localStorage.getItem('auth-token');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('Token não encontrado');
       }
@@ -76,13 +76,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Verificar autenticação na inicialização
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('auth-token');
+      const token = localStorage.getItem('accessToken');
       if (token && !isAuthenticated) {
         try {
           await refreshToken();
         } catch (error) {
           // Token inválido, limpar storage
-          localStorage.removeItem('auth-token');
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
         }
       }
     };

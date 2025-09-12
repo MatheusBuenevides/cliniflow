@@ -1,149 +1,95 @@
-# Documentação CliniFlow
+# CliniFlow
 
-## 📋 Visão Geral
+Sistema de gestão clínica desenvolvido com React, TypeScript, Vite e Tailwind CSS v4.
 
-O CliniFlow é uma plataforma completa desenvolvida especificamente para psicólogos, oferecendo quatro módulos principais:
+## Tecnologias Utilizadas
 
-1. **Agendamento Online e Gestão de Agenda** - Portal público com URL personalizada
-2. **Prontuário Eletrônico e Fichas de Pacientes** - Sistema seguro com criptografia
-3. **Sessões Online (Telepsicologia)** - Videoconferência integrada e segura
-4. **Módulo Financeiro e Pagamentos** - Controle completo das finanças
+- **React 19** - Framework para interface de usuário
+- **TypeScript** - Superset do JavaScript com tipagem estática
+- **Vite** - Ferramenta de build rápida
+- **Tailwind CSS v4** - Framework CSS utility-first
+- **Lucide React** - Ícones
+- **Recharts** - Gráficos e visualizações
 
-## 📚 Documentação Disponível
+## Configuração do Tailwind CSS v4
 
-### 🏗️ [ARCHITECTURE.md](./ARCHITECTURE.md)
-**Arquitetura técnica completa do sistema**
-- Stack tecnológica (React 19, TypeScript, Tailwind CSS v4)
-- Estrutura de pastas e organização do código
-- Padrões arquiteturais e convenções
-- Módulos principais detalhados
-- Segurança e criptografia
-- Próximos passos de desenvolvimento
+Este projeto utiliza o Tailwind CSS v4 com a configuração mais simples possível:
 
-### ✨ [FEATURES.md](./FEATURES.md)
-**Especificação detalhada de todas as funcionalidades**
-- **Módulo 1**: Agendamento online com URL personalizada por psicólogo
-- **Módulo 2**: Prontuário eletrônico com criptografia end-to-end
-- **Módulo 3**: Telepsicologia com videoconferência segura
-- **Módulo 4**: Sistema financeiro com gateway de pagamentos
-- Regras de negócio específicas para psicólogos
-- Conformidade com CFP e LGPD
+- **Zero configuração**: Sem `tailwind.config.js` nem `postcss.config.js`
+- **Vite nativo**: O Vite processa o Tailwind diretamente
+- **CSS puro**: Apenas `@import "tailwindcss"` no arquivo CSS principal
+- **Customizações via CSS**: Use a sintaxe `@theme` diretamente no CSS quando necessário
 
-### 🛠️ [DEVELOPMENT.md](./DEVELOPMENT.md)
-**Guia completo de desenvolvimento**
-- Configuração do ambiente de desenvolvimento
-- Convenções de código e nomenclatura
-- Estrutura de componentes React
-- Padrões TypeScript e gerenciamento de estado
-- Integração com APIs e tratamento de erros
-- Otimizações de performance
-- Setup de testes e deploy
+### Arquivos de Configuração
+```
+src/index.css
+└── @import "tailwindcss";
+```
 
-### 🎨 [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)
-**Sistema de design especializado para psicólogos**
-- Filosofia de design acolhedora e profissional
-- Paleta de cores terapêuticas e funcionais
-- Componentes especializados (AgendamentoCard, VideoSessionCard)
-- Estados visuais específicos (status de consulta, pagamento)
-- Ícones contextualizados para psicologia
-- Elementos de privacidade e criptografia
-- Acessibilidade e usabilidade
+Isso é tudo! O Vite e o Tailwind v4 cuidam de todo o resto automaticamente.
 
-### 🔌 [API_SPECIFICATION.md](./API_SPECIFICATION.md)
-**Especificação completa da API RESTful**
-- Autenticação e autorização
-- Endpoints para página pública de agendamento
-- API de pacientes e prontuários
-- Sistema de agendamentos e agenda
-- Telepsicologia e sessões de vídeo
-- Módulo financeiro e pagamentos
-- Configurações e relatórios
-- Códigos de erro e rate limiting
+Currently, two official plugins are available:
 
-### 📝 [types/index.ts](../src/types/index.ts)
-**Definições TypeScript completas**
-- Interfaces para todos os módulos principais
-- Tipos específicos para psicólogos e pacientes
-- Estruturas de agendamento e sessões
-- Tipos financeiros e de pagamento
-- Interfaces de formulários e validação
-- Tipos para videochamadas e chat
-- Estados da aplicação e contextos
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## 🚀 Como Usar Esta Documentação
+## Expanding the ESLint configuration
 
-### Para Desenvolvedores
-1. **Começar com**: `ARCHITECTURE.md` - Entenda a estrutura geral
-2. **Setup**: `DEVELOPMENT.md` - Configure seu ambiente
-3. **Tipos**: `types/index.ts` - Familiarize-se com as interfaces
-4. **API**: `API_SPECIFICATION.md` - Entenda os endpoints
-5. **UI**: `DESIGN_SYSTEM.md` - Implemente a interface
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-### Para Product Managers
-1. **Funcionalidades**: `FEATURES.md` - Visão completa do produto
-2. **Arquitetura**: `ARCHITECTURE.md` - Entenda as capacidades técnicas
-3. **API**: `API_SPECIFICATION.md` - Planeje integrações
+```js
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-### Para Designers
-1. **Design System**: `DESIGN_SYSTEM.md` - Guia visual completo
-2. **Funcionalidades**: `FEATURES.md` - Contexto de uso
-3. **Tipos**: `types/index.ts` - Entenda as estruturas de dados
+      // Remove tseslint.configs.recommended and replace with this
+      ...tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      ...tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      ...tseslint.configs.stylisticTypeChecked,
 
-## 🎯 Principais Diferenciais
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-### Especialização em Psicologia
-- URL personalizada por profissional (clinicflow.com/nomedopsicologo)
-- Conformidade com resoluções do CFP (Conselho Federal de Psicologia)
-- Terminologia e fluxos específicos da área
-- Design acolhedor e profissional
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-### Segurança e Privacidade
-- Criptografia end-to-end para dados sensíveis
-- Conformidade total com LGPD
-- Videoconferência segura sem necessidade de apps externos
-- Auditoria completa de acessos
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-### Facilidade de Uso
-- Interface intuitiva para psicólogos e pacientes
-- Agendamento online automatizado
-- Lembretes automáticos por e-mail/WhatsApp
-- Dashboard financeiro simplificado
-
-### Tecnologia Moderna
-- React 19 com TypeScript
-- Tailwind CSS v4 (zero configuração)
-- WebRTC para videoconferência
-- Gateway de pagamento integrado
-
-## 📋 Status do Projeto
-
-### ✅ Concluído
-- [ ] Documentação técnica completa
-- [ ] Especificação de funcionalidades
-- [ ] Design system especializado
-- [ ] Definições TypeScript
-- [ ] Especificação da API
-
-### 🚧 Em Desenvolvimento
-- [ ] Implementação do frontend React
-- [ ] API backend em Node.js
-- [ ] Sistema de videoconferência
-- [ ] Gateway de pagamentos
-
-### 📋 Próximas Etapas
-1. Implementar página pública de agendamento
-2. Desenvolver sistema de prontuário eletrônico
-3. Integrar videoconferência WebRTC
-4. Configurar gateway de pagamentos
-5. Implementar notificações automáticas
-
-## 📞 Contato e Suporte
-
-Para dúvidas sobre a documentação ou implementação:
-- Consulte os arquivos específicos na pasta `docs/`
-- Verifique os tipos TypeScript em `src/types/`
-- Utilize a especificação da API para desenvolvimento
-
----
-
-**Nota**: Esta documentação é atualizada conforme o desenvolvimento do projeto. Sempre consulte a versão mais recente no repositório.
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```

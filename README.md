@@ -1,95 +1,149 @@
-# CliniFlow
+# 🏥 CliniFlow - Sistema de Gestão Clínica
 
-Sistema de gestão clínica desenvolvido com React, TypeScript, Vite e Tailwind CSS v4.
+Sistema completo de gestão clínica para psicólogos, desenvolvido com React (frontend) e Node.js (backend).
 
-## Tecnologias Utilizadas
+## 📁 Estrutura do Projeto
 
-- **React 19** - Framework para interface de usuário
-- **TypeScript** - Superset do JavaScript com tipagem estática
-- **Vite** - Ferramenta de build rápida
-- **Tailwind CSS v4** - Framework CSS utility-first
-- **Lucide React** - Ícones
-- **Recharts** - Gráficos e visualizações
-
-## Configuração do Tailwind CSS v4
-
-Este projeto utiliza o Tailwind CSS v4 com a configuração mais simples possível:
-
-- **Zero configuração**: Sem `tailwind.config.js` nem `postcss.config.js`
-- **Vite nativo**: O Vite processa o Tailwind diretamente
-- **CSS puro**: Apenas `@import "tailwindcss"` no arquivo CSS principal
-- **Customizações via CSS**: Use a sintaxe `@theme` diretamente no CSS quando necessário
-
-### Arquivos de Configuração
 ```
-src/index.css
-└── @import "tailwindcss";
-```
+cliniflow/                          # Frontend React
+├── src/                            # Código fonte
+├── public/                         # Arquivos estáticos
+├── docs/                           # Documentação
+├── scripts/                        # Scripts de configuração
+└── package.json
 
-Isso é tudo! O Vite e o Tailwind v4 cuidam de todo o resto automaticamente.
+cliniflow-server/                   # Backend Node.js
+├── src/                            # Código fonte
+├── config/                         # Configurações
+├── docs/                           # Documentação
+└── package.json
 
-Currently, two official plugins are available:
+docker/                             # Configurações Docker
+├── frontend/                       # Dockerfile frontend
+├── backend/                        # Dockerfile backend
+├── docker-compose.dev.yml          # Desenvolvimento
+├── docker-compose.prod.yml         # Produção
+└── scripts/                        # Scripts Docker
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+docs/                               # Documentação geral
+├── api/                            # Documentação da API
+├── architecture/                   # Arquitetura
+├── deployment/                     # Deploy
+└── development/                    # Desenvolvimento
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+scripts/                            # Scripts globais
+├── setup.sh                        # Setup inicial
+├── dev.sh                          # Desenvolvimento
+└── build.sh                        # Build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Início Rápido
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Setup Inicial
+```bash
+make setup
 ```
+
+### 2. Instalar Dependências
+```bash
+make install
+```
+
+### 3. Executar em Desenvolvimento
+```bash
+make dev
+```
+
+### 4. Acessar Aplicação
+- **Frontend**: http://localhost:5173
+- **Backend**: http://localhost:3001
+- **Health Check**: http://localhost:3001/health
+
+## 🐳 Docker (Recomendado)
+
+### Desenvolvimento
+```bash
+make dev
+```
+
+### Produção
+```bash
+make prod
+```
+
+### Comandos Úteis
+```bash
+make help          # Ver todos os comandos
+make stop          # Parar containers
+make clean         # Limpar containers e volumes
+make logs          # Ver logs
+make test          # Executar testes
+make shell-backend # Acessar shell do backend
+make db-shell      # Acessar banco de dados
+```
+
+## 🧪 Testes
+
+```bash
+# Todos os testes
+make test
+
+# Testes específicos
+make test-frontend
+make test-backend
+```
+
+## 🛠️ Desenvolvimento
+
+### Estrutura do Frontend
+- **Componentes**: Organizados por funcionalidade
+- **Hooks**: Customizados para lógica reutilizável
+- **Stores**: Estado global com Zustand
+- **Services**: Cliente API e serviços
+
+### Estrutura do Backend
+- **Controllers**: Lógica de requisições
+- **Services**: Lógica de negócio
+- **Routes**: Definição de rotas
+- **Middlewares**: Autenticação e validação
+
+## 📚 Documentação
+
+- [Documentação da API](./docs/api/)
+- [Arquitetura](./docs/architecture/)
+- [Deploy](./docs/deployment/)
+- [Desenvolvimento](./docs/development/)
+
+## 🛠️ Tecnologias
+
+### Frontend
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- Zustand (Estado)
+- React Router
+
+### Backend
+- Node.js
+- Express.js
+- TypeScript
+- PostgreSQL
+- Knex.js
+- JWT
+- Winston (Logs)
+
+### DevOps
+- Docker
+- Docker Compose
+- Nginx
+- PostgreSQL
+- Redis
+
+## 📄 Licença
+
+MIT License
+
+---
+
+**CliniFlow** - Sistema de gestão clínica para psicólogos 🚀
