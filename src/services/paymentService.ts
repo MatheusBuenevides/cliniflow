@@ -4,6 +4,7 @@ import type {
   PaymentLink
 } from '../types';
 import { auditService } from './auditService';
+import { realPaymentService } from './realPaymentService';
 
 // Interfaces para integração com gateways
 interface GatewayConfig {
@@ -86,6 +87,7 @@ class PaymentService {
 
   /**
    * Processa um pagamento usando o gateway apropriado
+   * Agora delega para o serviço real de pagamentos
    */
   async processPayment(request: PaymentRequest): Promise<PaymentResponse> {
     const paymentId = `payment_${Date.now()}`;
@@ -108,25 +110,8 @@ class PaymentService {
         }
       );
 
-      let response: PaymentResponse;
-
-      switch (request.paymentMethod) {
-        case 'creditCard':
-        case 'debitCard':
-          response = await this.processCardPayment(request);
-          break;
-        
-        case 'pix':
-          response = await this.processPixPayment(request);
-          break;
-        
-        case 'boleto':
-          response = await this.processBoletoPayment(request);
-          break;
-        
-        default:
-          throw new Error(`Método de pagamento não suportado: ${request.paymentMethod}`);
-      }
+      // Delegar para o serviço real de pagamentos
+      const response = await realPaymentService.processPayment(request);
 
       // Log do sucesso do processamento
       await auditService.logPaymentEvent(
@@ -255,37 +240,18 @@ class PaymentService {
 
   /**
    * Verifica o status de um pagamento
+   * Agora delega para o serviço real de pagamentos
    */
-  async checkPaymentStatus(_paymentId: string): Promise<PaymentStatus> {
-    // Simular verificação de status
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Mock: 80% dos pagamentos são aprovados
-    const isApproved = Math.random() > 0.2;
-    return isApproved ? 'paid' : 'pending';
+  async checkPaymentStatus(paymentId: string, gateway?: 'stripe' | 'pagseguro' | 'pix'): Promise<PaymentStatus> {
+    return await realPaymentService.checkPaymentStatus(paymentId, gateway);
   }
 
   /**
    * Processa um estorno
+   * Agora delega para o serviço real de pagamentos
    */
-  async processRefund(_request: RefundRequest): Promise<RefundResponse> {
-    try {
-      // Simular processamento de estorno
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const refundId = `refund_${Date.now()}`;
-      const estimatedDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(); // 5 dias
-
-      return {
-        id: refundId,
-        status: 'processing',
-        refundId,
-        estimatedDate
-      };
-    } catch (error) {
-      console.error('Erro ao processar estorno:', error);
-      throw new Error('Falha ao processar estorno');
-    }
+  async processRefund(request: RefundRequest): Promise<RefundResponse> {
+    return await realPaymentService.processRefund(request);
   }
 
   /**

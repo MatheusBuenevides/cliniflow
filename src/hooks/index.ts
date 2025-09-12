@@ -10,3 +10,4 @@ export {
   useBoletoPayment, 
   useRefund 
 } from './usePayment';
+export { useRealPayment } from './useRealPayment';
